@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="utf-8">
 <title>Roamies</title>
@@ -19,11 +19,11 @@
       <!-- Updates, on every page: Check for updates, then Update to x (it installs and restarts), then Done. -->
       <button class="px btn ghost mini" type="button" id="head-update" hidden></button>
       <!-- Quit, at the end of the row: the first press turns it into Confirm for a few seconds. -->
-      <button class="link danger arm head-quit" type="button" id="head-quit" aria-pressed="false" aria-label="Quit Roamies"><span class="no" aria-hidden="true">Quit</span><span class="yes" aria-hidden="true">Confirm</span></button>
+      <button class="link danger arm head-quit" type="button" id="head-quit" aria-pressed="false" aria-label="Выйти из Roamies"><span class="no" aria-hidden="true">Выход</span><span class="yes" aria-hidden="true">Точно?</span></button>
       <!-- Close, last on the row: some Linux desktops never say the panel lost focus, so clicking away can't close it (#135). -->
-      <button class="link ibtn head-close" type="button" id="head-close" aria-label="Close the panel" data-tip="Close (Esc)"></button>
+      <button class="link ibtn head-close" type="button" id="head-close" aria-label="Закрыть панель" data-tip="Закрыть (Esc)"></button>
     </div>
-    <p class="by" id="by">By Ken Kai</p>
+    <p class="by" id="by">От Ken Kai</p>
     <!-- What it's doing and the model, for screen readers; on screen the LED shows it. -->
     <p class="sr-only" id="now" role="status" aria-live="polite"></p>
     <p class="saying" id="saying" aria-hidden="true"></p>
@@ -32,19 +32,19 @@
 
 <div class="split">
   <!-- One page per concern: what's going on, what it remembers, then a page for each group of settings. -->
-  <nav class="side" aria-label="Panel">
+  <nav class="side" aria-label="Панель">
     <ul class="nav">
-      <li><button class="px navi" type="button" id="nav-home" data-page="home" aria-controls="pane-home" aria-current="page">Home<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-memory" data-page="memory" aria-controls="pane-memory">Memory<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-abilities" data-page="abilities" aria-controls="pane-abilities">Abilities<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-model" data-page="model" aria-controls="pane-model">Model<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-appearance" data-page="appearance" aria-controls="pane-appearance">Appearance<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-speaking" data-page="speaking" aria-controls="pane-speaking">Speaking<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-listening" data-page="listening" aria-controls="pane-listening">Listening<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-shortcuts" data-page="shortcuts" aria-controls="pane-shortcuts">Shortcuts<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-general" data-page="general" aria-controls="pane-general">General<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-about" data-page="about" aria-controls="pane-about">About<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-whatsnew" data-page="whatsnew" aria-controls="pane-whatsnew">What's new<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-home" data-page="home" aria-controls="pane-home" aria-current="page">Главная<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-memory" data-page="memory" aria-controls="pane-memory">Память<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-abilities" data-page="abilities" aria-controls="pane-abilities">Навыки<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-model" data-page="model" aria-controls="pane-model">Модель<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-appearance" data-page="appearance" aria-controls="pane-appearance">Внешний вид<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-speaking" data-page="speaking" aria-controls="pane-speaking">Озвучка<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-listening" data-page="listening" aria-controls="pane-listening">Слух<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-shortcuts" data-page="shortcuts" aria-controls="pane-shortcuts">Клавиши<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-general" data-page="general" aria-controls="pane-general">Общие<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-about" data-page="about" aria-controls="pane-about">О программе<span class="dot" aria-hidden="true"></span></button></li>
+      <li><button class="px navi" type="button" id="nav-whatsnew" data-page="whatsnew" aria-controls="pane-whatsnew">Что нового<span class="dot" aria-hidden="true"></span></button></li>
     </ul>
   </nav>
   <main class="body">

@@ -1210,6 +1210,8 @@ final class Voice {
         if phase == .wake { return heardWhileWaiting(raw) }
         // A take started by the wake phrase: the phrase itself isn't part of what was said.
         let text = woke ? (WakeWord.match(raw) ?? WakeWord.dropping(wakeWords, from: raw)) : raw
+        // SFSpeechRecognizer can emit an empty final result after endAudio(); keep the last non-empty transcript.
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         guard text != best else { return }
         best = text
         heardAt = uptime()
