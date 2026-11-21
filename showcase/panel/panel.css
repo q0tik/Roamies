@@ -381,3 +381,6 @@ html, body { height: 100%; background: transparent; }
 
 /* Arabic and Hebrew in a list (dir=auto on the text): the Arabic font first, for its own word spacing. */
 .item .text:dir(rtl) { font-family: "Roamies Arabic RTL", var(--mono); }
+.jsonbox { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.jsonarea { width: 100%; min-height: 120px; box-sizing: border-box; padding: 8px; font: 400 11.5px/1.4 "Martian Mono", ui-monospace, Menlo, monospace; color: var(--ink); background: var(--bg); border: 1px solid var(--line); resize: vertical; }
+.jsonbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

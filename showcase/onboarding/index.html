@@ -251,6 +251,7 @@
       const next = b.dataset.uilang;
       if (next === lang) return;
       localStorage.setItem('roamies_ui_lang', next);
+      window.__TAURI__?.core?.invoke('sidecar_send', { msg: { type: 'menu', id: `uilang:${next}` } }).catch(() => {});
       window.__TAURI__?.core?.invoke('sidecar_send', { msg: { type: 'menu', id: `speechlang:${next === 'ru' ? 'ru-RU' : 'en-US'}` } }).catch(() => {});
       location.reload();
     });

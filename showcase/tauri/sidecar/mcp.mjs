@@ -178,7 +178,7 @@ export function createMcp({ file = path.join(DIR, 'mcp.json'), secrets, manager 
     return out;
   }
 
-  return { ready, probe, add, remove, setEnabled, login, status, liveText, tools, tool, importable, has: (name) => !!read().mcpServers[name], dispose: async () => { await mgr?.dispose?.().catch(() => {}); } };
+  return { ready, probe, add, remove, setEnabled, login, status, liveText, tools, tool, importable, raw: () => read(), has: (name) => !!read().mcpServers[name], dispose: async () => { await mgr?.dispose?.().catch(() => {}); } };
 }
 
 // gg's client, loaded only when a connection is first needed.

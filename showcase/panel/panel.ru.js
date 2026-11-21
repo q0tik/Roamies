@@ -461,8 +461,31 @@
       el('span', { className: 'row-btns' },
         link('Открыть', () => act(`skill:view:${x.slug}`, true), { k: `skill:view:${x.slug}`, aria: `Открыть скилл ${x.name}` }),
         armed('Удалить', 'Точно?', `skill:forget:${x.slug}`, `skill:forget:${x.slug}`, `Удалить скилл ${x.name}`))),
-    { label: 'Скиллы', empty: 'Пока нет скиллов. Скажите «запомни, как это делать», когда я выполню задачу.' });
-    return { body: [el('div', { className: 'group paged' }, box)], foot: foot(k.length ? el('p', { className: 'usage', textContent: `Скиллов: ${k.length}` }) : null, nav) };
+    { label: 'Скиллы', empty: 'Пока нет скиллов. Скажите «запомни, как это делать» или импортируйте .md файл.' });
+    let importBox = null;
+    if (ui.skillMdOpen) {
+      const ta = el('textarea', { className: 'jsonarea', placeholder: '---\nname: my-skill\ndescription: Когда использовать\n---\n\n1. Шаг первый...' });
+      const fileIn = el('input', { type: 'file', accept: '.md,.markdown,.txt', hidden: true, on: { change: (e) => {
+        const f = e.target.files?.[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = () => { ta.value = String(r.result ?? ''); ta.dataset.fname = f.name; };
+        r.readAsText(f);
+      } } });
+      importBox = el('div', { className: 'jsonbox' }, fileIn, ta,
+        el('div', { className: 'jsonbar' },
+          btn('Выбрать .md', () => fileIn.click(), { k: 'skill-pick' }),
+          btn('Сохранить скилл', () => {
+            if (!ta.value.trim()) return ta.focus();
+            send({ type: 'panel_skill_import', raw: ta.value, name: ta.dataset.fname || '' });
+            ui.skillMdOpen = false;
+          }, { kind: 'primary', k: 'skill-save' }),
+          link('Закрыть', () => { ui.skillMdOpen = false; render(); }, { k: 'skill-close' })));
+    }
+    return { body: [el('div', { className: 'group paged' }, box), importBox],
+      foot: foot(el('div', { className: 'jsonbar' },
+        btn(ui.skillMdOpen ? 'Скрыть импорт' : 'Импорт .md', () => { ui.skillMdOpen = !ui.skillMdOpen; render(); }, { k: 'skill-import-toggle' }),
+        link('Открыть папку', () => act('open_skills_dir'), { k: 'open-skills-dir' }),
+        k.length ? el('span', { className: 'usage', textContent: `· ${k.length}` }) : null), nav) };
   }
   function factList() {
     const f = state.facts, q = ui.q.trim().toLowerCase();
@@ -929,7 +952,6 @@
     return { body: [
       group(null, 'То, что я делаю сам в течение дня.', null,
         state.brief ? toggle('Утренняя сводка', 'При первом разговоре за день я начинаю со списка дел на сегодня.', state.brief.on, () => act('morningbrief'), 'morningbrief') : null,
-        state.brief?.on && state.brief.canTodoist ? toggle('Включать Todoist', 'Читаю окно Todoist (открываю при необходимости). Оставайтесь в аккаунте.', state.brief.todoist, () => act('brieftodoist'), 'brieftodoist') : null,
         f ? el('div', { className: 'setting' },
           el('span', {}, f.until ? 'Режим фокуса активен' : 'Отвлекающие факторы',
             el('small', { className: 'wrap', textContent: f.until ? `До ${new Date(f.until).toLocaleTimeString('ru-RU', { hour: 'numeric', minute: '2-digit' })}${f.task ? ` · ${f.task}` : ''}` : `Скажите «фокус на 30 минут». Слежу за: ${f.list.slice(0, 4).join(', ')}${f.list.length > 4 ? '…' : ''}` })),
@@ -967,9 +989,19 @@
           el('button', { className: 'px switch', type: 'button', role: 'switch', 'aria-checked': String(!!x.enabled), 'aria-labelledby': `lbl-mcp-${x.name}`, 'data-k': `mcp:sw:${x.name}`,
             on: { click: () => act(`mcp:${x.enabled ? 'off' : 'on'}:${x.name}`) } }))));
     }, { label: 'Подключения', empty: 'Нет подключённых приложений.' });
+    let jsonBox = null;
+    if (ui.mcpJsonOpen) {
+      const ta = el('textarea', { className: 'jsonarea', value: state.mcpJson ?? '{\n  "mcpServers": {}\n}', spellcheck: false });
+      jsonBox = el('div', { className: 'jsonbox' }, ta,
+        el('div', { className: 'jsonbar' },
+          btn('Импортировать JSON', () => { send({ type: 'panel_mcp_json', json: ta.value }); ui.mcpJsonOpen = false; }, { kind: 'primary', k: 'mcp-json-save' }),
+          link('Закрыть', () => { ui.mcpJsonOpen = false; render(); }, { k: 'mcp-json-close' })));
+    }
     return {
-      body: [group(null, 'Приложения вроде Linear и Notion, которыми я могу управлять.', null), el('div', { className: 'group paged' }, box)],
-      foot: foot(btn('Подключить приложение', () => act('askconnect', true), { k: 'askconnect' }), nav),
+      body: [group(null, 'Приложения и MCP-серверы, которыми я могу управлять.', null), el('div', { className: 'group paged' }, box), jsonBox],
+      foot: foot(el('div', { className: 'jsonbar' },
+        btn('Подключить приложение', () => act('askconnect', true), { k: 'askconnect' }),
+        btn(ui.mcpJsonOpen ? 'Скрыть JSON' : 'JSON', () => { ui.mcpJsonOpen = !ui.mcpJsonOpen; render(); }, { k: 'mcp-json-toggle' })), nav),
     };
   }
   // What I may do, and when I start.
@@ -979,7 +1011,7 @@
       group('Общие', 'Что мне разрешено делать и когда запускаться.', null,
         el('div', { className: 'setting' },
           el('span', {}, 'Язык интерфейса'),
-          picks('Язык интерфейса', [['en', 'English'], ['ru', 'Русский']], uiLang, (x) => { localStorage.setItem('roamies_ui_lang', x); location.reload(); }, 'uilang')),
+          picks('Язык интерфейса', [['en', 'English'], ['ru', 'Русский']], uiLang, (x) => { localStorage.setItem('roamies_ui_lang', x); send({ type: 'menu', id: `uilang:${x}` }); location.reload(); }, 'uilang')),
         toggle('Звуковые эффекты', null, state.sound, () => act('sound'), 'sound'),
         state.notch != null ? group('Где я появляюсь', 'Рядом с курсором или в верхней части экрана.', null,
           picks('Где я появляюсь', [['off', 'У курсора'], ['drop', 'Капсула'], ...(state.notchReal ? [['spread', 'Чёлка (Notch)']] : [])], state.notch, (x) => act(`notch_${x}`), 'notch',
@@ -1068,7 +1100,7 @@
   }
 
   // ---------------------------------------------------------------- render
-  const PANES = { home, memory, abilities: abilitiesPage, model: modelPage, appearance: appearancePage, speaking: speakingPage, listening: listeningPage, shortcuts: shortcutsPage, general: generalPage, about: aboutPage, whatsnew: whatsNewPage };
+  const PANES = { home, memory, abilities: abilitiesPage, model: modelPage, appearance: appearancePage, speaking: speakingPage, listening: listeningPage, shortcuts: shortcutsPage, general: generalPage, whatsnew: whatsNewPage };
   // focusKey: what to focus after (a data-k, or an element id); otherwise whatever had focus keeps it.
   function render(focusKey, animate = false) {
     if (!state) return;

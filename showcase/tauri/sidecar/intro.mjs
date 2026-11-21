@@ -83,15 +83,19 @@ const GOAL = /\b(goal|want(?:s|ed)? to|aim|aiming|launch|build|grow|finish|reach
 /** The fact that reads most like their goal, or null. */
 export const goalFrom = (facts = []) => facts.map((f) => String(f.text ?? f)).find((t) => GOAL.test(t)) ?? null;
 /** The tour's beats: three tickets and, with a goal, its medal. mac: whether the how-to ticket can use words on screen. */
-export function tourBeats(name, me = 'Roamie', goal = null, { mac = true } = {}) {
+export function tourBeats(name, me = 'Roamie', goal = null, { mac = true, lang = 'en' } = {}) {
   const ask = (value) => ({ do: 'ask', value });
-  const beats = [
+  const beats = lang === 'ru' ? [
+    { say: `[warm] Отлично, ${name}, вот что я умею. Нажми на любую карточку.`, marks: [{ kind: 'ticket', n: 1, title: 'Покажу как', text: 'Спроси, как сделать что-то в приложении, и я покажу каждый шаг прямо на экране.', label: 'Попробовать', action: ask(mac ? 'Как сделать скриншот на этом Mac?' : 'Как сменить обои?') }] },
+    { say: 'Могу нарисовать всё, что тебе интересно.', marks: [{ kind: 'ticket', n: 2, title: 'Объясню', text: 'Графики, таймлайны, молекулы и даже 3D-модели прямо во время ответа.', label: 'Попробовать', action: ask('Объясни сложный процент с помощью графика') }] },
+    { say: 'И помогу не забыть о твоих планах.', marks: [{ kind: 'ticket', n: 3, title: 'Напомню', text: 'Скажи, что и когда нужно сделать, а я вовремя напомню.', label: 'Попробовать', action: ask('Напомни через 10 минут сделать разминку') }] },
+  ] : [
     { say: `[warm] Okay ${name}, here's what I can do. Tap one to try it.`, marks: [{ kind: 'ticket', n: 1, title: 'Show you how', text: "Ask how to do something in an app and I'll draw each step right on your screen.", label: 'Try it', action: ask(mac ? 'How do I take a screenshot on this Mac?' : 'How do I change my wallpaper?') }] },
     { say: "I can sketch out anything you're curious about.", marks: [{ kind: 'ticket', n: 2, title: 'Explain it', text: 'Graphs, timelines, molecules, even little 3D models, drawn while I talk.', label: 'Try it', action: ask('Explain compound interest with a graph') }] },
     { say: "And I'll keep you to what you say you'll do.", marks: [{ kind: 'ticket', n: 3, title: 'Keep you on track', text: "Tell me what you'll do and when, and I'll nudge you.", label: 'Try it', action: ask('Remind me in 10 minutes to stretch') }] },
   ];
   const g = goal && String(goal).replace(/\s+/g, ' ').trim().slice(0, 110);
-  if (g) beats.push({ say: `[bright] And this is what we're going for. I'm in, ${name}.`, marks: [{ kind: 'medal', title: 'your goal', text: g }, { kind: 'emote', name: 'hype' }] });
+  if (g) beats.push({ say: lang === 'ru' ? `[bright] Вот к чему мы идём. Я в деле, ${name}.` : `[bright] And this is what we're going for. I'm in, ${name}.`, marks: [{ kind: 'medal', title: lang === 'ru' ? 'твоя цель' : 'your goal', text: g }, { kind: 'emote', name: 'hype' }] });
   return beats.map((b) => ({ ...b, say: b.say.slice(0, 240) }));
 }
 

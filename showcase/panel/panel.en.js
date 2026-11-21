@@ -461,8 +461,31 @@
       el('span', { className: 'row-btns' },
         link('View', () => act(`skill:view:${x.slug}`, true), { k: `skill:view:${x.slug}`, aria: `View the skill ${x.name}` }),
         armed('Remove', 'Confirm', `skill:forget:${x.slug}`, `skill:forget:${x.slug}`, `Remove the skill ${x.name}`))),
-    { label: 'Skills', empty: `None yet. Say “remember how to do this” after I've done something.` });
-    return { body: [el('div', { className: 'group paged' }, box)], foot: foot(k.length ? el('p', { className: 'usage', textContent: `${k.length} skill${k.length === 1 ? '' : 's'}` }) : null, nav) };
+    { label: 'Skills', empty: `None yet. Say “remember how to do this” or import a .md file.` });
+    let importBox = null;
+    if (ui.skillMdOpen) {
+      const ta = el('textarea', { className: 'jsonarea', placeholder: '---\nname: my-skill\ndescription: When to use it\n---\n\n1. Step one...' });
+      const fileIn = el('input', { type: 'file', accept: '.md,.markdown,.txt', hidden: true, on: { change: (e) => {
+        const f = e.target.files?.[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = () => { ta.value = String(r.result ?? ''); ta.dataset.fname = f.name; };
+        r.readAsText(f);
+      } } });
+      importBox = el('div', { className: 'jsonbox' }, fileIn, ta,
+        el('div', { className: 'jsonbar' },
+          btn('Pick .md file', () => fileIn.click(), { k: 'skill-pick' }),
+          btn('Save skill', () => {
+            if (!ta.value.trim()) return ta.focus();
+            send({ type: 'panel_skill_import', raw: ta.value, name: ta.dataset.fname || '' });
+            ui.skillMdOpen = false;
+          }, { kind: 'primary', k: 'skill-save' }),
+          link('Close', () => { ui.skillMdOpen = false; render(); }, { k: 'skill-close' })));
+    }
+    return { body: [el('div', { className: 'group paged' }, box), importBox],
+      foot: foot(el('div', { className: 'jsonbar' },
+        btn(ui.skillMdOpen ? 'Hide import' : 'Import .md', () => { ui.skillMdOpen = !ui.skillMdOpen; render(); }, { k: 'skill-import-toggle' }),
+        link('Open folder', () => act('open_skills_dir'), { k: 'open-skills-dir' }),
+        k.length ? el('span', { className: 'usage', textContent: `· ${k.length}` }) : null), nav) };
   }
   function factList() {
     const f = state.facts, q = ui.q.trim().toLowerCase();
@@ -929,7 +952,6 @@
     return { body: [
       group(null, 'Things I do on my own through the day.', null,
         state.brief ? toggle('Morning briefing', 'The first time you talk to me each day, I start with what’s due.', state.brief.on, () => act('morningbrief'), 'morningbrief') : null,
-        state.brief?.on && state.brief.canTodoist ? toggle('Include Todoist', 'I read your Todoist window (opening it if needed). Stay signed in.', state.brief.todoist, () => act('brieftodoist'), 'brieftodoist') : null,
         f ? el('div', { className: 'setting' },
           el('span', {}, f.until ? 'Focus block running' : 'Focus distractions',
             el('small', { className: 'wrap', textContent: f.until ? `Until ${new Date(f.until).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}${f.task ? ` · ${f.task}` : ''}` : `Say “focus for 30 minutes”. I watch for: ${f.list.slice(0, 4).join(', ')}${f.list.length > 4 ? '…' : ''}` })),
@@ -967,9 +989,19 @@
           el('button', { className: 'px switch', type: 'button', role: 'switch', 'aria-checked': String(!!x.enabled), 'aria-labelledby': `lbl-mcp-${x.name}`, 'data-k': `mcp:sw:${x.name}`,
             on: { click: () => act(`mcp:${x.enabled ? 'off' : 'on'}:${x.name}`) } }))));
     }, { label: 'Connections', empty: 'No apps connected yet.' });
+    let jsonBox = null;
+    if (ui.mcpJsonOpen) {
+      const ta = el('textarea', { className: 'jsonarea', value: state.mcpJson ?? '{\n  "mcpServers": {}\n}', spellcheck: false });
+      jsonBox = el('div', { className: 'jsonbox' }, ta,
+        el('div', { className: 'jsonbar' },
+          btn('Import JSON', () => { send({ type: 'panel_mcp_json', json: ta.value }); ui.mcpJsonOpen = false; }, { kind: 'primary', k: 'mcp-json-save' }),
+          link('Close', () => { ui.mcpJsonOpen = false; render(); }, { k: 'mcp-json-close' })));
+    }
     return {
-      body: [group(null, 'Apps like Linear and Notion I can use for you.', null), el('div', { className: 'group paged' }, box)],
-      foot: foot(btn('Connect an app', () => act('askconnect', true), { k: 'askconnect' }), nav),
+      body: [group(null, 'Apps and MCP servers I can use for you.', null), el('div', { className: 'group paged' }, box), jsonBox],
+      foot: foot(el('div', { className: 'jsonbar' },
+        btn('Connect an app', () => act('askconnect', true), { k: 'askconnect' }),
+        btn(ui.mcpJsonOpen ? 'Hide JSON' : 'JSON', () => { ui.mcpJsonOpen = !ui.mcpJsonOpen; render(); }, { k: 'mcp-json-toggle' })), nav),
     };
   }
   // What I may do, and when I start.
@@ -979,7 +1011,7 @@
       group('General', 'What I may do, and when I start.', null,
         el('div', { className: 'setting' },
           el('span', {}, 'Language'),
-          picks('Language', [['en', 'English'], ['ru', 'Русский']], uiLang, (x) => { localStorage.setItem('roamies_ui_lang', x); location.reload(); }, 'uilang')),
+          picks('Language', [['en', 'English'], ['ru', 'Русский']], uiLang, (x) => { localStorage.setItem('roamies_ui_lang', x); send({ type: 'menu', id: `uilang:${x}` }); location.reload(); }, 'uilang')),
         toggle('Sound effects', null, state.sound, () => act('sound'), 'sound'),
         state.notch != null ? group('Where I appear', 'Beside your cursor, or from the top of the screen.', null,
           picks('Where I appear', [['off', 'Beside the cursor'], ['drop', 'Capsule'], ...(state.notchReal ? [['spread', 'Notch']] : [])], state.notch, (x) => act(`notch_${x}`), 'notch',
@@ -1068,7 +1100,7 @@
   }
 
   // ---------------------------------------------------------------- render
-  const PANES = { home, memory, abilities: abilitiesPage, model: modelPage, appearance: appearancePage, speaking: speakingPage, listening: listeningPage, shortcuts: shortcutsPage, general: generalPage, about: aboutPage, whatsnew: whatsNewPage };
+  const PANES = { home, memory, abilities: abilitiesPage, model: modelPage, appearance: appearancePage, speaking: speakingPage, listening: listeningPage, shortcuts: shortcutsPage, general: generalPage, whatsnew: whatsNewPage };
   // focusKey: what to focus after (a data-k, or an element id); otherwise whatever had focus keeps it.
   function render(focusKey, animate = false) {
     if (!state) return;

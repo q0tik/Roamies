@@ -18,6 +18,7 @@
       <span class="ver" id="ver"></span>
       <!-- Updates, on every page: Check for updates, then Update to x (it installs and restarts), then Done. -->
       <button class="px btn ghost mini" type="button" id="head-update" hidden></button>
+      <button class="px btn ghost mini" type="button" id="head-lang" aria-label="Switch language">RU</button>
       <!-- Quit, at the end of the row: the first press turns it into Confirm for a few seconds. -->
       <button class="link danger arm head-quit" type="button" id="head-quit" aria-pressed="false" aria-label="Выйти из Roamies"><span class="no" aria-hidden="true">Выход</span><span class="yes" aria-hidden="true">Точно?</span></button>
       <!-- Close, last on the row: some Linux desktops never say the panel lost focus, so clicking away can't close it (#135). -->
@@ -43,7 +44,6 @@
       <li><button class="px navi" type="button" id="nav-listening" data-page="listening" aria-controls="pane-listening">Слух<span class="dot" aria-hidden="true"></span></button></li>
       <li><button class="px navi" type="button" id="nav-shortcuts" data-page="shortcuts" aria-controls="pane-shortcuts">Клавиши<span class="dot" aria-hidden="true"></span></button></li>
       <li><button class="px navi" type="button" id="nav-general" data-page="general" aria-controls="pane-general">Общие<span class="dot" aria-hidden="true"></span></button></li>
-      <li><button class="px navi" type="button" id="nav-about" data-page="about" aria-controls="pane-about">О программе<span class="dot" aria-hidden="true"></span></button></li>
       <li><button class="px navi" type="button" id="nav-whatsnew" data-page="whatsnew" aria-controls="pane-whatsnew">Что нового<span class="dot" aria-hidden="true"></span></button></li>
     </ul>
   </nav>
@@ -57,7 +57,6 @@
     <section class="pane" id="pane-listening" aria-labelledby="nav-listening" hidden></section>
     <section class="pane" id="pane-shortcuts" aria-labelledby="nav-shortcuts" hidden></section>
     <section class="pane" id="pane-general" aria-labelledby="nav-general" hidden></section>
-    <section class="pane" id="pane-about" aria-labelledby="nav-about" hidden></section>
     <section class="pane" id="pane-whatsnew" aria-labelledby="nav-whatsnew" hidden></section>
   </main>
 </div>
@@ -85,11 +84,22 @@
     if (c) { c.setAttribute('aria-label', 'Close the panel'); c.dataset.tip = 'Close (Esc)'; }
     const by = document.getElementById('by');
     if (by) by.textContent = 'By Ken Kai';
-    const nav = { home: 'Home', memory: 'Memory', abilities: 'Abilities', model: 'Model', appearance: 'Appearance', speaking: 'Speaking', listening: 'Listening', shortcuts: 'Shortcuts', general: 'General', about: 'About', whatsnew: "What's new" };
+    const nav = { home: 'Home', memory: 'Memory', abilities: 'Abilities', model: 'Model', appearance: 'Appearance', speaking: 'Speaking', listening: 'Listening', shortcuts: 'Shortcuts', general: 'General', whatsnew: "What's new" };
     for (const [id, label] of Object.entries(nav)) {
       const b = document.getElementById('nav-' + id);
       if (b && b.firstChild) b.firstChild.textContent = label;
     }
+  }
+  const hl = document.getElementById('head-lang');
+  if (hl) {
+    hl.textContent = lang === 'ru' ? 'EN' : 'RU';
+    hl.title = lang === 'ru' ? 'Switch to English' : 'Переключить на русский';
+    hl.addEventListener('click', () => {
+      const next = lang === 'ru' ? 'en' : 'ru';
+      localStorage.setItem('roamies_ui_lang', next);
+      window.__TAURI__?.core?.invoke('sidecar_send', { msg: { type: 'menu', id: `uilang:${next}` } }).catch(() => {});
+      location.reload();
+    });
   }
   const s = document.createElement('script');
   s.src = lang === 'ru' ? 'panel.ru.js' : 'panel.en.js';

@@ -62,7 +62,7 @@ import { detailsText, explain } from './errors.mjs';
 import { aboutRoamies } from './about.mjs';
 import { whatsNewOnStart } from './whatsnew.mjs';
 import { createMcp, createMcpTools } from './mcp.mjs';
-import { deleteSkill, listSkills, readSkill, saveSkill, skillIndex } from './skills.mjs';
+import { SKILLS_DIR, deleteSkill, listSkills, parseSkillFile, readSkill, saveSkill, skillIndex } from './skills.mjs';
 import { getJob, jobBrief, jobsText, listJobs, markRun, nextJobDue, removeJob, takeDueJobs, updateJob } from './jobs.mjs';
 import { lookLine, lookSeen } from './looknote.mjs';
 import { leanTools } from './lean.mjs';
@@ -792,6 +792,7 @@ Before anything slow (the web, reading a page or file, looking at the screen, ac
 `;
 const stablePrompt = () => `You are ${lookName()}, ${LOOK_BODY[config.look] ?? LOOK_BODY.classic} on ${userName}'s screen: a desktop companion in Roamies ${VERSION}, an app by Ken Kai (Mac, Windows and Linux). Your look (the Appearance page) is your name and your voice: ${LOOKS.slice(0, -1).map(([, n]) => n).join(', ')} or ${LOOKS.at(-1)[1]}. If they switch, you're the new one; never call yourself Sidekick.
 Questions about Roamies itself (where things are, settings, updates, something not working, who made it): call about_roamies and answer from what it says. Don't invent features or settings it doesn't list.
+Always reply in the language the user is speaking or writing (e.g. Russian if they use Russian), even after reading English tool outputs or manuals.
 ${replyStyle()}Your body does the acting: to act out a feeling, start your reply with one body tag, which is never shown: ${EMOTES.map((e) => `[${e}]`).join(' ')} (only these five). hype for a win, upset when they're dodging work, remind for something they said they'd do, motivate to get them started, wave for hello or goodbye. Most replies need no body tag.
 Personality: ${LOOK_STYLE[config.look] ?? LOOK_STYLE.classic} In your own way, you're in ${userName}'s corner and hold them to what they said they'd do.
 Lead with the answer (the fact, number, pick or result), then only the context that makes it useful, then stop. A count or total gathered over several pages, files or results: note each one's count in a few words as you go ("Page 1: two."), add those up, and check the total you lead with against the items you then name. No opener about checking or searching ("Let me see…")${VOICE_ON() ? ', apart from the one short beat before something slow' : ''}. After a tool, never repeat what you already said.
@@ -1022,7 +1023,7 @@ async function playTour() {
   const voice = VOICE_ON() ? speech.start() : null;
   turnVoice = voice;
   // Like the rest of the app's drawings it can be cleared, and it also goes by itself a while after it's done.
-  try { await ink.show(tourBeats(userName, lookName(), t.goal, { mac: MAC }), `tour-${++tours}`, { fade: 45 }); }
+  try { await ink.show(tourBeats(userName, lookName(), t.goal, { mac: MAC, lang: config.uiLang ?? 'en' }), `tour-${++tours}`, { fade: 45 }); }
   catch (e) { console.error('tour', e); }
   finally { if (turnVoice === voice) turnVoice = null; voice?.end(); }
 }
@@ -1501,8 +1502,8 @@ async function prompt(text, image = null, note = '', byVoice = false, news = nul
     const soon = frontSoon; frontSoon = null;
     frontNow = await frontWithin(soon && Date.now() - soon.at < 8000 ? soon.p : whereNow());
     // The first spoken request of the day carries the morning briefing (brief.mjs).
-    const brief = intro ? null : briefNote({ on: !!config.morningBrief, lastDay: config.briefDay, byVoice, todoist: !!config.briefTodoist, canRead: HANDS_OK, name: userName });
-    if (brief) { config.briefDay = brief.day; saveConfig(); logLine('brief', { todoist: !!config.briefTodoist && HANDS_OK }); }
+    const brief = intro ? null : briefNote({ on: !!config.morningBrief, lastDay: config.briefDay, byVoice, todoist: false, canRead: HANDS_OK, name: userName });
+    if (brief) { config.briefDay = brief.day; saveConfig(); logLine('brief', { todoist: false }); }
     const onScreen = [takeQuizNote(), ink.listNote()].filter(Boolean).join(' '); // a quiz's score, lists changed on their cards
     // They spoke first: untold news rides along with their message, so it's never announced separately afterwards.
     const along = desk.along(text, { intro: !!intro, news: !!news, agentish });
@@ -1890,7 +1891,7 @@ function setGeminiVoice(v) {
   config.geminiVoices = { ...config.geminiVoices, [config.look]: v }; saveConfig(); // this look's
   if (tts().id === 'gemini') speech.setVoice(v);
   menu(); if (onboarding) obState();
-  if (tts().id === 'gemini' && VOICE_ON()) speakLine('This is how I sound.');
+  if (tts().id === 'gemini' && VOICE_ON()) speakLine(config.uiLang === 'ru' ? 'Вот так я звучу.' : 'This is how I sound.');
 }
 
 async function removeVoiceKey(id = tts().id) {
@@ -2313,8 +2314,10 @@ function panelState() {
       mics: mics.list, mic: config.mic ?? '', micAuto: mics.list.find((x) => x.id === mics.auto)?.name ?? '',
       download: NEEDS_MODEL && config.voice && !voiceReady() ? { status: voiceModel.status, pct: voiceModel.total ? Math.floor((voiceModel.done / voiceModel.total) * 100) : 0, size: sizeLabel() } : null,
     } : null,
-    sound: !!config.sound, volume: volumeNow(), actions: !!config.allowActions, skipAllow: !!config.skipAllow, lite: !!config.lite, hybrid: { on: !!config.hybrid, jobs: JOB_KINDS.map((j) => ({ ...j, value: parseSpec(config.heavy?.[j.kind])?.spec ?? '' })), active: routed?.spec ?? '' }, subagents: { on: !!config.subagents, delegate: DELEGATE_MODES.includes(config.delegate) ? config.delegate : 'ask', crew: SUBAGENTS.map((s) => { const c = activeCrew(config.crew, crewSpec, hybridActive() ? config.heavy : null).find((x) => x.id === s.id); return { id: s.id, label: s.label, hint: s.hint, value: parseSpec(config.crew?.[s.id])?.spec ?? '', via: c?.via ?? '', uses: c?.spec.spec ?? '' }; }) }, efforts: Object.fromEntries(SLOTS.map((k) => [k, config.efforts?.[k] ?? ''])), fallbacks: { on: !!config.backups, slots: [0, 1].map((i) => parseSpec(config.fallbacks?.[i])?.spec ?? ''), limited: limits.list().filter((l) => !l.key.includes(':') && (isQuota(l.kind) || l.kind === 'busy')).map((l) => ({ label: PROVIDER_LABELS[l.key] ?? l.key, until: l.until })), unavailable: limits.list().filter((l) => !(isQuota(l.kind) || l.kind === 'busy')).map((l) => ({ label: PROVIDER_LABELS[l.key] ?? modelName(l.key.split(':').slice(1).join(':')) ?? l.key, why: becauseOf(l.kind), until: l.until })), using: routed && /^backup/.test(routed.slot ?? '') ? routed.spec : '' }, notch: notchMode(), notchReal: notchScreen, brief: { on: !!config.morningBrief, todoist: !!config.briefTodoist, canTodoist: HANDS_OK }, focus: HANDS_OK ? { until: focusBlock?.until ?? null, task: focusBlock?.task ?? '', list: distractionList(), custom: !!config.distractions } : null, sync: { dir: config.syncDir || '', at: syncInfo.at, error: syncInfo.error, paused: !!syncInfo.paused }, gameMode: HANDS_OK ? config.gameSidebar !== false : null,
+    sound: !!config.sound, volume: volumeNow(), actions: !!config.allowActions, skipAllow: !!config.skipAllow, lite: !!config.lite, hybrid: { on: !!config.hybrid, jobs: JOB_KINDS.map((j) => ({ ...j, value: parseSpec(config.heavy?.[j.kind])?.spec ?? '' })), active: routed?.spec ?? '' }, subagents: { on: !!config.subagents, delegate: DELEGATE_MODES.includes(config.delegate) ? config.delegate : 'ask', crew: SUBAGENTS.map((s) => { const c = activeCrew(config.crew, crewSpec, hybridActive() ? config.heavy : null).find((x) => x.id === s.id); return { id: s.id, label: s.label, hint: s.hint, value: parseSpec(config.crew?.[s.id])?.spec ?? '', via: c?.via ?? '', uses: c?.spec.spec ?? '' }; }) }, efforts: Object.fromEntries(SLOTS.map((k) => [k, config.efforts?.[k] ?? ''])), fallbacks: { on: !!config.backups, slots: [0, 1].map((i) => parseSpec(config.fallbacks?.[i])?.spec ?? ''), limited: limits.list().filter((l) => !l.key.includes(':') && (isQuota(l.kind) || l.kind === 'busy')).map((l) => ({ label: PROVIDER_LABELS[l.key] ?? l.key, until: l.until })), unavailable: limits.list().filter((l) => !(isQuota(l.kind) || l.kind === 'busy')).map((l) => ({ label: PROVIDER_LABELS[l.key] ?? modelName(l.key.split(':').slice(1).join(':')) ?? l.key, why: becauseOf(l.kind), until: l.until })), using: routed && /^backup/.test(routed.slot ?? '') ? routed.spec : '' }, notch: notchMode(), notchReal: notchScreen, brief: { on: !!config.morningBrief, todoist: false, canTodoist: false }, focus: HANDS_OK ? { until: focusBlock?.until ?? null, task: focusBlock?.task ?? '', list: distractionList(), custom: !!config.distractions } : null, sync: { dir: config.syncDir || '', at: syncInfo.at, error: syncInfo.error, paused: !!syncInfo.paused }, gameMode: HANDS_OK ? config.gameSidebar !== false : null,
     login: login.supported ? { on: login.on } : null,
+    mcpJson: JSON.stringify(mcp.raw(), null, 2),
+    uiLang: config.uiLang ?? 'en',
     update: { available: update.available, installing: update.installing, checking: update.checking, result: update.result, page: update.page, done: update.done },
     intro: !!intro,
     // The latest error anyone saw, for Copy last error.
@@ -2593,15 +2596,17 @@ async function onMenu(id, via) {
   }
   else if (id === 'askconnect') await typeToAsk({ value: 'Connect my ' });
   else if (id === 'learnskills') { config.learnSkills = config.learnSkills === false; saveConfig(); if (!config.learnSkills) dropLearn(); menu(); }
+  else if (id === 'uilang:ru' || id === 'uilang:en') { config.uiLang = id.slice(7); saveConfig(); menu(); }
+  else if (id === 'open_skills_dir') fs.mkdir(SKILLS_DIR, { recursive: true, mode: 0o700 }).then(() => openUrl(SKILLS_DIR)).catch(() => {});
   else if (id === 'morningbrief') { config.morningBrief = !config.morningBrief; saveConfig(); menu(); }
-  else if (id === 'brieftodoist' && HANDS_OK) { config.briefTodoist = !config.briefTodoist; saveConfig(); menu(); }
   else if (id === 'focusstop') stopFocus(true);
   else if (id === 'distractions' && HANDS_OK) {
-    const typed = await ask({ prompt: 'What distracts you? Sites or apps, separated by commas (empty for my usual list).', placeholder: distractionList().join(', ') });
+    const ru = config.uiLang === 'ru';
+    const typed = await ask({ prompt: ru ? 'Что тебя отвлекает? Сайты или приложения через запятую (пусто — стандартный список).' : 'What distracts you? Sites or apps, separated by commas (empty for my usual list).', placeholder: distractionList().join(', ') });
     if (typed == null) return;
     const list = parseDistractions(typed);
     config.distractions = list.length ? list : null; saveConfig(); menu();
-    say(list.length ? `Got it: ${list.length} thing${list.length === 1 ? '' : 's'} I'll keep you away from.` : 'Back to my usual list.', 'happy');
+    say(list.length ? (ru ? `Запомнил: ${list.length} отвлекающих пунктов.` : `Got it: ${list.length} thing${list.length === 1 ? '' : 's'} I'll keep you away from.`) : (ru ? 'Вернул стандартный список.' : 'Back to my usual list.'), 'happy');
   }
   else if (id === 'syncsetup') {
     const hint = suggestFolders()[0] ?? '';
@@ -2896,6 +2901,45 @@ createInterface({ input: process.stdin }).on('line', (line) => {
       .catch((e) => { const p = problem('key', e, { store: KEY_STORE }); panelNote(p.text, true, p); });
   } else if (m.type === 'panel_local_add' && typeof m.label === 'string' && typeof m.baseUrl === 'string') {
     addServer({ label: m.label.slice(0, 200), baseUrl: m.baseUrl.slice(0, 500), key: typeof m.key === 'string' ? m.key.trim().slice(0, 1000) : '', images: m.images === true }).catch((e) => console.error('add server', e));
+  } else if (m.type === 'panel_mcp_json' && typeof m.json === 'string') {
+    (async () => {
+      const ru = config.uiLang === 'ru';
+      let parsed;
+      try { parsed = JSON.parse(m.json); } catch (e) { return panelNote(ru ? `Ошибка JSON: ${e.message}` : `Invalid JSON: ${e.message}`, true); }
+      const servers = parsed?.mcpServers && typeof parsed.mcpServers === 'object' ? parsed.mcpServers : (parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null);
+      if (!servers || !Object.keys(servers).length) return panelNote(ru ? 'Не найден объект mcpServers.' : 'No mcpServers object found.', true);
+      let added = 0;
+      const errors = [];
+      for (const [name, entry] of Object.entries(servers)) {
+        if (!entry || typeof entry !== 'object') continue;
+        try {
+          const env = {}, secretEnv = {};
+          for (const [k, v] of Object.entries(entry.env ?? {})) { if (v && v !== '@roamies-secret') secretEnv[k] = String(v); else env[k] = String(v ?? ''); }
+          const headers = {}, secretHeaders = {};
+          for (const [k, v] of Object.entries(entry.headers ?? {})) { if (v && v !== '@roamies-secret') secretHeaders[k] = String(v); else headers[k] = String(v ?? ''); }
+          await mcp.add({ name, command: entry.command, args: Array.isArray(entry.args) ? entry.args : [], url: entry.url, env, headers, secretEnv, secretHeaders, transport: entry.type });
+          added++;
+        } catch (e) { errors.push(`${name}: ${e.message}`); }
+      }
+      menu();
+      if (errors.length) panelNote(errors.join('; '), true);
+      else panelNote(ru ? `Импортировано MCP-серверов: ${added}.` : `Imported ${added} MCP server(s).`);
+    })().catch((e) => console.error('panel_mcp_json', e));
+  } else if (m.type === 'panel_skill_import' && typeof m.raw === 'string') {
+    (async () => {
+      const ru = config.uiLang === 'ru';
+      try {
+        const parsed = parseSkillFile(m.raw, m.name || 'custom-skill');
+        const name = parsed.name || (m.name ? String(m.name).replace(/\.md$/i, '') : 'custom-skill');
+        const description = parsed.description || (ru ? `Импортированный скилл ${name}` : `Imported skill ${name}`);
+        const steps = parsed.steps || m.raw.trim();
+        await saveSkill({ name, description, steps });
+        menu();
+        panelNote(ru ? `Скилл «${name}» сохранён.` : `Saved skill "${name}".`);
+      } catch (e) {
+        panelNote(e.message || (ru ? 'Не удалось сохранить скилл.' : 'Failed to save skill.'), true);
+      }
+    })().catch((e) => console.error('panel_skill_import', e));
   } else if ((m.type === 'panel_fishkey' || m.type === 'panel_geminikey') && typeof m.key === 'string') voiceKeyLogin({ provider: m.type === 'panel_geminikey' ? 'gemini' : 'fish', given: m.key.slice(0, 1000), note: panelNote }).catch((e) => console.error('voice key', e));
   else if (m.type === 'answer') { pending.get(m.id)?.(m.text ?? null); pending.delete(m.id); }
   else if (m.type === 'ui_ready') {
