@@ -70,6 +70,31 @@
 <script src="../roamies/jarvis.js"></script>
 <script src="../roamies/people.js"></script>
 <script src="../roamies/10-dither.js"></script>
-<script src="panel.js"></script>
+<script>
+(() => {
+  const lang = localStorage.getItem('roamies_ui_lang') === 'ru' ? 'ru' : 'en';
+  document.documentElement.lang = lang;
+  if (lang === 'en') {
+    const q = document.getElementById('head-quit');
+    if (q) {
+      q.setAttribute('aria-label', 'Quit Roamies');
+      q.querySelector('.no').textContent = 'Quit';
+      q.querySelector('.yes').textContent = 'Confirm';
+    }
+    const c = document.getElementById('head-close');
+    if (c) { c.setAttribute('aria-label', 'Close the panel'); c.dataset.tip = 'Close (Esc)'; }
+    const by = document.getElementById('by');
+    if (by) by.textContent = 'By Ken Kai';
+    const nav = { home: 'Home', memory: 'Memory', abilities: 'Abilities', model: 'Model', appearance: 'Appearance', speaking: 'Speaking', listening: 'Listening', shortcuts: 'Shortcuts', general: 'General', about: 'About', whatsnew: "What's new" };
+    for (const [id, label] of Object.entries(nav)) {
+      const b = document.getElementById('nav-' + id);
+      if (b && b.firstChild) b.firstChild.textContent = label;
+    }
+  }
+  const s = document.createElement('script');
+  s.src = lang === 'ru' ? 'panel.ru.js' : 'panel.en.js';
+  document.body.appendChild(s);
+})();
+</script>
 </body>
 </html>
