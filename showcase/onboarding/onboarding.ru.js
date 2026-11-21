@@ -859,7 +859,7 @@
       quip('Смотри на рабочий стол!', 1.2);
       demo.render();
       // Started at once: the first card is still being got ready while the bubble shows and this window steps aside.
-      send({ type: 'ob_showcase' });
+      send({ type: 'ob_showcase', lang: 'ru' });
       await wait(reduced.matches ? 0 : 500);
       if (demo.status !== 'playing') return;
       demo.aside = true;
@@ -1017,7 +1017,7 @@
     enter() {
       if (chat.status === 'idle') {
         chat.status = 'thinking';
-        send({ type: 'chat_start' });
+        send({ type: 'chat_start', lang: 'ru' });
         setTimeout(() => at('chat') && act('wave'), 700);
       }
       chat.voiceHint();

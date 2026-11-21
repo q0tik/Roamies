@@ -1030,14 +1030,14 @@ async function playTour() {
 // along (each beat as it starts, done when drawn) and comes back once every card is gone: faded 2.5 s after the end,
 // closed, cleared with Esc, or the screen changed.
 let showcase = null, showcases = 0;
-async function playShowcase() {
+async function playShowcase(lang = 'en') {
   if (busy) return ob({ kind: 'showcase', phase: 'failed' });
   endShowcase(null);
   ink.clear(); // a replay starts clean, even while the last one is still fading
   const me = showcase = { id: `showcase-${++showcases}`, watch: null, drawn: false };
   const voice = VOICE_ON() ? speech.start() : null;
   turnVoice = voice;
-  try { await ink.show(showcaseBeats(userName, lookName()), me.id, { fade: 2.5 }); }
+  try { await ink.show(showcaseBeats(userName, lookName(), lang), me.id, { fade: 2.5 }); }
   catch (e) { console.error('showcase', e); if (showcase === me) endShowcase('failed'); }
   finally { if (turnVoice === voice) turnVoice = null; voice?.end(); }
 }
@@ -2730,7 +2730,9 @@ function takeSnap() {
 let introKnown = new Set(); // facts that existed before the chat, so the end can show only what it learned
 let beforeIntro = null; // the conversation the chat interrupted: it carries on afterwards
 const introFacts = () => listFacts().filter((f) => !introKnown.has(f.id)).map((f) => ({ id: f.id, text: f.text }));
-async function startIntro() {
+let introLang = 'en';
+async function startIntro(lang = 'en') {
+  introLang = lang === 'ru' ? 'ru' : 'en';
   if (intro) return ob({ kind: 'chat_state', status: 'busy' });
   await refreshAuth();
   if (!ensureModel()) return ob({ kind: 'chat_state', status: 'no_model' });
@@ -2740,7 +2742,7 @@ async function startIntro() {
   freshSession(null);
   session.kind = 'intro';
   ob({ kind: 'chat_state', status: 'thinking', n: 0, total: QUESTIONS });
-  await enqueue(openNote(userName, lookName()));
+  await enqueue(openNote(userName, lookName(), introLang));
   introTurn();
 }
 // However it ends, the chat's notes and questions don't steer what comes next (what it learned is in memory):
@@ -2779,7 +2781,7 @@ async function introAnswer(text) {
   if (wantsSkip(text)) { endIntro(); config.introDone = true; saveConfig(); return ob({ kind: 'chat_done', skipped: true, facts: [] }); }
   const n = ++me.n;
   ob({ kind: 'chat_state', status: 'thinking', n, total: QUESTIONS });
-  await enqueue(answerTurn(n, userName, text));
+  await enqueue(answerTurn(n, userName, text, introLang));
   if (intro === me) await introTurn();
 }
 
@@ -2834,10 +2836,10 @@ let keysBefore = null;
 async function onGuide(m) {
   if (m.type === 'ob_hello') { onboarding = true; await refreshAuth(); await voiceKeysLoaded; obState(); }
   else if (m.type === 'ob_closed') { onboarding = false; endIntro(); stopShowcase(); if (tourPending) setTimeout(playTour, 800); }
-  else if (m.type === 'ob_showcase') playShowcase();
+  else if (m.type === 'ob_showcase') playShowcase(m.lang);
   else if (m.type === 'ob_showcase_warm') warmShowcase();
   else if (m.type === 'ob_showcase_stop') stopShowcase();
-  else if (m.type === 'chat_start') startIntro();
+  else if (m.type === 'chat_start') startIntro(m.lang);
   else if (m.type === 'chat_answer' && typeof m.text === 'string') introAnswer(m.text.trim().slice(0, 2000));
   else if (m.type === 'chat_skip') { endIntro(); config.introDone = true; saveConfig(); menu(); }
   else if (m.type === 'chat_forget' && typeof m.id === 'string') { await forgetFact(m.id); ob({ kind: 'chat_facts', facts: introFacts() }); menu(); }
