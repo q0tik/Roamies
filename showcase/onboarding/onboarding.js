@@ -128,12 +128,12 @@
   let copyLink = null;
   function showError(id, text, copy = false) {
     const e = $(id);
-    const link = copy ? el('button', { className: 'link', type: 'button', textContent: 'Copy details', onclick: () => { copyLink = link; send({ type: 'copy_problem' }); } }) : null;
+    const link = copy ? el('button', { className: 'link', type: 'button', textContent: 'Скопировать детали', onclick: () => { copyLink = link; send({ type: 'copy_problem' }); } }) : null;
     e.replaceChildren(el('span', { textContent: text, title: text }), ...(link ? [link] : []));
     e.removeAttribute('title'); e.hidden = false;
   }
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  const CHEERS = ['Got it!', 'Nice!', 'Perfect.', 'Yes!'];
+  const CHEERS = ['Готово!', 'Отлично!', 'Супер.', 'Есть!'];
   const isMac = () => state?.platform === 'darwin';
   const isLinux = () => state?.platform === 'linux';
   // Wayland: no app may hold shortcuts, so these are the commands to bind in the desktop's settings (else null).
@@ -177,12 +177,12 @@
         ];
       }
       return [
-        { id: 'mic', title: 'Microphone', desc: 'So you can talk to me.', pane: 'Privacy_Microphone' },
-        ...(this.sys.speechNeeded ? [{ id: 'speech', title: 'Speech recognition', desc: 'Turns your voice into text.', pane: 'Privacy_SpeechRecognition' }] : []),
-        { id: 'screen', title: 'Screen recording', pane: 'Privacy_ScreenCapture', bad: this.shot === 'failed',
-          desc: this.shot === 'failed' ? "Can't see yet. Reopen me." : this.shot === 'checking' ? 'Taking one test screenshot.' : 'So I can see your screen.' },
-        { id: 'accessibility', title: 'Control apps', desc: 'Fill in forms and click for you.', pane: 'Privacy_Accessibility' },
-        { id: 'files', title: 'Your files', desc: 'Desktop, Documents, Downloads.', pane: 'Privacy_FilesAndFolders' },
+        { id: 'mic', title: 'Микрофон', desc: 'Чтобы ты мог говорить со мной.', pane: 'Privacy_Microphone' },
+        ...(this.sys.speechNeeded ? [{ id: 'speech', title: 'Распознавание речи', desc: 'Переводит твой голос в текст.', pane: 'Privacy_SpeechRecognition' }] : []),
+        { id: 'screen', title: 'Запись экрана', pane: 'Privacy_ScreenCapture', bad: this.shot === 'failed',
+          desc: this.shot === 'failed' ? 'Пока не вижу экран. Перезапусти меня.' : this.shot === 'checking' ? 'Делаю тестовый скриншот.' : 'Чтобы я видел твой экран.' },
+        { id: 'accessibility', title: 'Управление приложениями', desc: 'Заполнять формы и кликать за тебя.', pane: 'Privacy_Accessibility' },
+        { id: 'files', title: 'Твои файлы', desc: 'Рабочий стол, Документы, Загрузки.', pane: 'Privacy_FilesAndFolders' },
       ];
     },
     status(id) {
@@ -197,20 +197,20 @@
     // A voice download that's under way counts: it carries on after the guide closes.
     done() { return this.rows().every((r) => this.status(r.id) === 'granted' || (r.id === 'voice' && state.voiceModel.status === 'downloading')); },
     async allow(r) {
-      if (r.id === 'voice') { send({ type: 'ob_voice_model' }); act('hype'); quip('Downloading! Keep going', 3); return; }
+      if (r.id === 'voice') { send({ type: 'ob_voice_model' }); act('hype'); quip('Скачиваю! Можно идти дальше', 3); return; }
       this.waiting = r.id; this.asked[r.id] = true; this.render();
       poseFn = POSE.point(1.7, -0.1);
-      if (r.id === 'files') { quip('Click OK when it asks!'); send({ type: 'ob_files', request: true }); return; }
+      if (r.id === 'files') { quip('Нажми OK, когда спросит!'); send({ type: 'ob_files', request: true }); return; }
       if (r.id === 'screen' || r.id === 'accessibility') {
         // Straight to the Settings pane, skipping macOS's "Open System Settings?" dialog; the panel under
         // Settings has my icon to drag into the list. Screen Recording only counts after a relaunch.
         this.waiting = null;
         this.openSettings(r);
-        quip('Drag me into the list!', 5);
+        quip('Перетащи меня в список!', 5);
         this.render();
         return;
       }
-      quip('Click Allow when it asks!');
+      quip('Нажми «Разрешить»!');
       const res = await invoke('perm_request', { kind: r.id });
       this.apply(res);
       if (this.waiting === r.id) this.waiting = null;
@@ -234,7 +234,7 @@
       this.shot = 'checking'; this.render();
       const res = await invoke('screen_check').catch(() => null);
       this.shot = res?.seen || res?.unsupported ? 'ok' : 'failed';
-      if (this.shot === 'failed' && at('perms')) { act('upset'); quip('Switch me on, then Reopen', 5); }
+      if (this.shot === 'failed' && at('perms')) { act('upset'); quip('Включи меня и нажми «Перезапуск»', 5); }
       this.render();
     },
     applyFiles(status) {
@@ -244,26 +244,26 @@
     render() {
       const list = $('perm-rows');
       const rows = this.rows();
-      $('perm-lead').textContent = isMac() ? 'Only used when you ask me something.' : rows.length ? `One download so I can hear you. Your voice never leaves ${thisPC()}.` : 'Nothing to allow here. Just one choice below.';
+      $('perm-lead').textContent = isMac() ? 'Используется только когда ты меня о чём-то просишь.' : rows.length ? `Нужно скачать модель, чтобы я тебя слышал. Голос остаётся на ${thisPC()}.` : 'Здесь ничего не нужно. Только один переключатель ниже.';
       const firstPending = rows.find((r) => this.status(r.id) !== 'granted');
       list.replaceChildren(...rows.map((r) => {
         const st = this.status(r.id);
         let side;
-        if (r.id === 'voice' && st === 'granted') side = okMark('Ready');
+        if (r.id === 'voice' && st === 'granted') side = okMark('Готово');
         else if (r.id === 'voice' && state.voiceModel.status === 'downloading') side = dlMeter(state.voiceModel);
-        else if (r.id === 'voice') side = el('button', { className: `px btn ${state.voiceModel.status === 'error' ? 'ghost' : 'primary'}`, type: 'button', textContent: state.voiceModel.status === 'error' ? 'Retry' : 'Download', onclick: () => this.allow(r) });
-        else if (r.id === 'screen' && this.shot === 'checking') side = el('span', { className: 'waiting', textContent: 'Checking…' });
+        else if (r.id === 'voice') side = el('button', { className: `px btn ${state.voiceModel.status === 'error' ? 'ghost' : 'primary'}`, type: 'button', textContent: state.voiceModel.status === 'error' ? 'Повторить' : 'Скачать', onclick: () => this.allow(r) });
+        else if (r.id === 'screen' && this.shot === 'checking') side = el('span', { className: 'waiting', textContent: 'Проверка…' });
         else if (r.id === 'screen' && this.shot === 'failed') side = el('span', { className: 'pair' },
-          el('button', { className: 'px btn ghost', type: 'button', textContent: 'Reopen', onclick: () => { quip('Be right back!'); setTimeout(() => invoke('relaunch'), 400); } }),
-          el('button', { className: 'px btn primary', type: 'button', textContent: 'Try again', onclick: () => { this.shot = 'idle'; this.checkShot(); } }));
-        else if (st === 'granted') side = okMark(this.asked[r.id] || !isMac() ? 'Allowed' : 'Already allowed');
-        else if (this.waiting === r.id) side = el('span', { className: 'waiting', textContent: 'Waiting for you…' });
+          el('button', { className: 'px btn ghost', type: 'button', textContent: 'Перезапуск', onclick: () => { quip('Сейчас вернусь!'); setTimeout(() => invoke('relaunch'), 400); } }),
+          el('button', { className: 'px btn primary', type: 'button', textContent: 'Ещё раз', onclick: () => { this.shot = 'idle'; this.checkShot(); } }));
+        else if (st === 'granted') side = okMark(this.asked[r.id] || !isMac() ? 'Разрешено' : 'Уже разрешено');
+        else if (this.waiting === r.id) side = el('span', { className: 'waiting', textContent: 'Жду ответа…' });
         else if (r.id === 'screen' && this.asked.screen) side = el('span', { className: 'pair' },
-          el('button', { className: 'px btn ghost', type: 'button', textContent: 'Settings', onclick: () => { this.openSettings(r); quip('Switch on Roamies'); } }),
-          el('button', { className: 'px btn primary', type: 'button', textContent: 'Reopen', onclick: () => { quip('Be right back!'); setTimeout(() => invoke('relaunch'), 400); } }));
-        else if (st === 'denied' || this.asked[r.id]) side = el('button', { className: 'px btn ghost', type: 'button', textContent: 'Open Settings', onclick: () => { this.openSettings(r); quip(isMac() ? 'Switch Roamies on!' : 'Turn on desktop apps!', 4); } });
-        else if (!isMac()) side = el('span', { className: 'waiting', textContent: 'Checking…' });
-        else side = el('button', { className: 'px btn primary', type: 'button', textContent: 'Allow', onclick: () => this.allow(r) });
+          el('button', { className: 'px btn ghost', type: 'button', textContent: 'Настройки', onclick: () => { this.openSettings(r); quip('Включи Roamies'); } }),
+          el('button', { className: 'px btn primary', type: 'button', textContent: 'Перезапуск', onclick: () => { quip('Сейчас вернусь!'); setTimeout(() => invoke('relaunch'), 400); } }));
+        else if (st === 'denied' || this.asked[r.id]) side = el('button', { className: 'px btn ghost', type: 'button', textContent: 'Открыть настройки', onclick: () => { this.openSettings(r); quip(isMac() ? 'Включи Roamies!' : 'Разреши доступ!', 4); } });
+        else if (!isMac()) side = el('span', { className: 'waiting', textContent: 'Проверка…' });
+        else side = el('button', { className: 'px btn primary', type: 'button', textContent: 'Разрешить', onclick: () => this.allow(r) });
         const li = el('li', { className: `px row${st === 'granted' ? ' granted' : r === firstPending ? ' focus' : ''}`, id: `perm-${r.id}` },
           el('div', {}, el('h2', { textContent: r.title }), el('p', { textContent: r.desc, title: r.desc, className: r.bad || (r.id === 'voice' && state.voiceModel.status === 'error') ? 'bad' : '' })), side);
         return li;
@@ -271,24 +271,24 @@
       // Not an OS permission, but the agent's other half: settle it here too.
       const sw = el('button', { className: 'px switch', type: 'button', role: 'switch' });
       sw.setAttribute('aria-checked', String(!!state?.actions));
-      sw.setAttribute('aria-label', 'Let me edit files and run commands');
-      sw.onclick = () => { const on = sw.getAttribute('aria-checked') !== 'true'; sw.setAttribute('aria-checked', String(on)); send({ type: 'set_actions', on }); if (on) { act('hype'); quip("I'll be careful!"); } };
+      sw.setAttribute('aria-label', 'Разрешить редактировать файлы и запускать команды');
+      sw.onclick = () => { const on = sw.getAttribute('aria-checked') !== 'true'; sw.setAttribute('aria-checked', String(on)); send({ type: 'set_actions', on }); if (on) { act('hype'); quip('Буду осторожен!'); } };
       list.append(el('li', { className: 'px row' },
-        el('div', {}, el('h2', { textContent: 'Edit files and run commands' }), el('p', { textContent: 'Off: I can look, never change.' })), sw));
+        el('div', {}, el('h2', { textContent: 'Правка файлов и команды' }), el('p', { textContent: 'Выкл: могу только смотреть, ничего не меняя.' })), sw));
       // Only an installed copy can start at login, so the row is hidden otherwise (login is null).
       if (state?.login != null) {
         const ls = el('button', { className: 'px switch', type: 'button', role: 'switch' });
         ls.setAttribute('aria-checked', String(!!state.login));
-        ls.setAttribute('aria-label', 'Open Roamies at login');
-        ls.onclick = () => { const on = ls.getAttribute('aria-checked') !== 'true'; ls.setAttribute('aria-checked', String(on)); send({ type: 'set_login', on }); if (on) quip("See you every morning!"); };
+        ls.setAttribute('aria-label', 'Запускать Roamies при входе');
+        ls.onclick = () => { const on = ls.getAttribute('aria-checked') !== 'true'; ls.setAttribute('aria-checked', String(on)); send({ type: 'set_login', on }); if (on) quip('Увидимся каждое утро!'); };
         list.append(el('li', { className: 'px row' },
-          el('div', {}, el('h2', { textContent: 'Open at login' }), el('p', { textContent: 'Start with your computer.' })), ls));
+          el('div', {}, el('h2', { textContent: 'Запуск при входе в систему' }), el('p', { textContent: 'Стартовать вместе с компьютером.' })), ls));
       }
 
       if (this.guiding && this.status(this.guiding) === 'granted') this.unguide();
 
       const screenStuck = isMac() && this.asked.screen && this.status('screen') !== 'granted';
-      if (screenStuck && !this.hinted && this.waiting !== 'screen') { this.hinted = true; setTimeout(() => at('perms') && quip('Switched me on? Hit Reopen', 5), 6000); }
+      if (screenStuck && !this.hinted && this.waiting !== 'screen') { this.hinted = true; setTimeout(() => at('perms') && quip('Включил? Нажми «Перезапуск»', 5), 6000); }
 
       // Cheer for anything that just turned green.
       for (const r of rows) {
@@ -311,8 +311,8 @@
       setTimeout(() => {
         if (!at('perms')) return;
         const left = perms.rows().filter((r) => perms.status(r.id) !== 'granted').length;
-        if (!isMac()) quip(left === 0 ? 'Already sorted!' : perms.status('mic') === 'denied' ? 'Unblock the mic' : 'Grab my voice!');
-        else quip(left === 0 ? 'Already sorted!' : left === 1 ? 'Just one to allow' : 'Tap Allow on each one');
+        if (!isMac()) quip(left === 0 ? 'Всё готово!' : perms.status('mic') === 'denied' ? 'Разблокируй микрофон' : 'Скачай мой голос!');
+        else quip(left === 0 ? 'Всё готово!' : left === 1 ? 'Осталось одно разрешение' : 'Нажми «Разрешить» на каждом');
       }, 900);
       const tick = async () => {
         perms.apply(await invoke('perm_status'));
@@ -363,25 +363,25 @@
   const ai = {
     busy: null, loginId: null, status: '', timer: null, mode: 'signin', key: null, keyBusy: null,
     render() {
-      $('ai-lead').textContent = ai.mode === 'key' ? 'Pick where your key is from, then paste it.' : "Sign in with an AI account you have. Using GG Coder? You're already in.";
+      $('ai-lead').textContent = ai.mode === 'key' ? 'Выбери провайдера и вставь ключ.' : 'Войди в свой аккаунт ИИ. Пользуешься GG Coder? Ты уже вошёл.';
       $('providers').hidden = ai.mode !== 'signin';
       $('key-providers').hidden = ai.mode !== 'key';
-      $('key-toggle').textContent = ai.mode === 'key' ? 'Sign in instead' : 'Use an API key instead';
+      $('key-toggle').textContent = ai.mode === 'key' ? 'Войти через аккаунт' : 'Использовать API-ключ';
       $('providers').replaceChildren(...(state?.oauth ?? []).map((p) => {
         const busy = ai.busy === p.id;
         const b = el('button', { className: `px prov${p.connected ? ' on' : ''}${busy ? ' busy' : ''}`, type: 'button' },
           el('span', { textContent: p.name }), led(p.connected ? 'on' : busy ? 'busy' : ''),
-          el('small', { textContent: busy ? ai.waitText() : p.connected ? 'Connected' : p.company }));
-        if (busy) b.setAttribute('aria-label', `${p.name}: ${ai.waitText()}. Click to cancel.`);
+          el('small', { textContent: busy ? ai.waitText() : p.connected ? 'Подключено' : p.company }));
+        if (busy) b.setAttribute('aria-label', `${p.name}: ${ai.waitText()}. Нажми для отмены.`);
         b.onclick = () => (busy ? ai.cancel() : ai.login(p));
         return b;
       }));
       $('key-providers').replaceChildren(...(state?.apikey ?? []).map((p) => {
         const busy = ai.keyBusy === p.id;
         // One line each, so fourteen fit with the key field under them: the light says Connected (and the field's label).
-        const b = el('button', { className: `px prov${p.connected ? ' on' : ''}${busy ? ' busy' : ''}`, type: 'button', title: p.connected ? `${p.name}: connected` : '' },
+        const b = el('button', { className: `px prov${p.connected ? ' on' : ''}${busy ? ' busy' : ''}`, type: 'button', title: p.connected ? `${p.name}: подключено` : '' },
           el('span', { textContent: p.name }), led(p.connected ? 'on' : busy ? 'busy' : ''));
-        b.setAttribute('aria-label', `${p.name}${busy ? ', checking the key' : p.connected ? ', connected' : ''}`);
+        b.setAttribute('aria-label', `${p.name}${busy ? ', проверка ключа' : p.connected ? ', подключено' : ''}`);
         b.setAttribute('aria-pressed', String(ai.key === p.id));
         b.onclick = () => ai.pickKey(p);
         return b;
@@ -389,9 +389,9 @@
       const k = (state?.apikey ?? []).find((p) => p.id === ai.key);
       $('key-form').hidden = ai.mode !== 'key' || !k;
       if (k) {
-        $('key-label').textContent = k.connected ? `${k.name} is connected. Paste a new key to replace it` : `Paste your ${k.name} API key`;
+        $('key-label').textContent = k.connected ? `${k.name} подключён. Вставь новый ключ для замены` : `Вставь API-ключ ${k.name}`;
         $('key-link').hidden = !k.link;
-        $('key-link').setAttribute('aria-label', `Get a ${k.name} API key (opens your browser)`);
+        $('key-link').setAttribute('aria-label', `Получить API-ключ ${k.name} (откроется браузер)`);
         $('key-save').disabled = !!ai.keyBusy;
       }
       nav();
@@ -399,22 +399,22 @@
     // What the waiting card says: Claude's download progress, else how to get out of it.
     waitText() {
       const st = ai.status, pct = /(\d+)%/.exec(st)?.[1], mb = /(\d+) MB/.exec(st)?.[1];
-      if (/^Downloading/.test(st)) return pct ? `Downloading ${pct}%` : mb ? `Downloading ${mb} MB` : 'Downloading…';
-      if (/^Checking/.test(st)) return 'Checking download…';
-      if (/^Unpacking/.test(st)) return 'Unpacking…';
-      return 'Waiting… click to cancel';
+      if (/^Downloading/.test(st)) return pct ? `Скачивание ${pct}%` : mb ? `Скачивание ${mb} МБ` : 'Скачивание…';
+      if (/^Checking/.test(st)) return 'Проверка загрузки…';
+      if (/^Unpacking/.test(st)) return 'Распаковка…';
+      return 'Ожидание… нажми для отмены';
     },
     login(p) {
       if (ai.busy) ai.stop();
       ai.busy = p.id; ai.status = ''; ai.loginId = `g${Date.now().toString(36)}`;
       $('login-error').hidden = true; ai.render();
       poseFn = POSE.think();
-      quip(p.id === 'anthropic' ? 'Claude takes a minute' : "Sign in there. I'll wait!", 3.2);
+      quip(p.id === 'anthropic' ? 'Claude грузится минуту' : 'Войди там, я подожду!', 3.2);
       send({ type: 'ob_login', provider: p.id, id: ai.loginId });
       ai.arm();
     },
     // The 3 minutes restart whenever there's progress (Claude's one-time download can take a while).
-    arm() { clearTimeout(ai.timer); ai.timer = setTimeout(() => ai.cancel('Took too long. Try again?'), LOGIN_MS); },
+    arm() { clearTimeout(ai.timer); ai.timer = setTimeout(() => ai.cancel('Слишком долго. Попробовать ещё раз?'), LOGIN_MS); },
     stop() {
       clearTimeout(ai.timer);
       if (ai.loginId) send({ type: 'ob_login_cancel', id: ai.loginId });
@@ -424,8 +424,8 @@
     cancel(why) {
       if (!ai.busy) return;
       ai.stop();
-      if (why) { showError('login-error', why); quip('Hmm. Try again?'); }
-      else quip('Okay, stopped.');
+      if (why) { showError('login-error', why); quip('Хм. Попробовать ещё раз?'); }
+      else quip('Ладно, остановил.');
       ai.render();
     },
     pickKey(p) {
@@ -439,13 +439,13 @@
       if (msg.phase === 'status') { ai.status = String(msg.text ?? ''); ai.arm(); ai.render(); return; }
       clearTimeout(ai.timer);
       ai.busy = null; ai.loginId = null; ai.status = ''; ai.keyBusy = null; poseFn = null;
-      if (msg.phase === 'done') { act('hype'); quip('Ooh, a brain!'); $('code-form').hidden = true; }
-      else { showError('login-error', msg.error || "That didn't work. Try again.", msg.copy); quip('Hmm. Try again?'); }
+      if (msg.phase === 'done') { act('hype'); quip('О, мозги появились!'); $('code-form').hidden = true; }
+      else { showError('login-error', msg.error || 'Не получилось. Попробуй ещё раз.', msg.copy); quip('Хм. Попробовать ещё раз?'); }
       ai.render();
     },
     enter() {
       ai.render();
-      setTimeout(() => at('ai') && quip(state?.connected ? 'Already connected!' : 'Pick one you have'), 700);
+      setTimeout(() => at('ai') && quip(state?.connected ? 'Уже подключено!' : 'Выбери свой аккаунт'), 700);
       if (state?.connected) setTimeout(() => at('ai') && act('hype'), 900);
       else poseFn = POSE.point(1.7, 0.05);
       aim($('providers'));
@@ -461,7 +461,7 @@
     send({ type: 'answer', id: askId, text: v });
     askId = null; $('code-form').hidden = true; $('code-input').value = '';
   });
-  for (const [id, type, line] of [['autolisten-switch', 'ob_autolisten', "I'll listen right after."], ['wake-switch', 'ob_wake', 'Just say hey!'], ['lite-switch', 'ob_lite', 'Light and quick!']]) {
+  for (const [id, type, line] of [['autolisten-switch', 'ob_autolisten', 'Буду слушать сразу после ответа.'], ['wake-switch', 'ob_wake', 'Просто скажи привет!'], ['lite-switch', 'ob_lite', 'Легко и быстро!']]) {
     $(id).addEventListener('click', () => { const on = $(id).getAttribute('aria-checked') !== 'true'; $(id).setAttribute('aria-checked', String(on)); send({ type, on }); if (on) quip(line); });
   }
   $('key-toggle').addEventListener('click', () => {
@@ -472,7 +472,7 @@
   });
   $('key-link').addEventListener('click', () => {
     const k = (state?.apikey ?? []).find((p) => p.id === ai.key);
-    if (k?.link) { send({ type: 'open_link', url: k.link }); quip('Copy it, then paste here'); }
+    if (k?.link) { send({ type: 'open_link', url: k.link }); quip('Скопируй и вставь сюда'); }
   });
   $('key-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -494,8 +494,8 @@
   // the UI: the #fish-link button in index.html reads "Get a free key (affiliate link)".
   const FISH_URL = 'https://fish.audio/?fpr=o3gtlu';
   const TTS = {
-    fish: { name: 'Fish Audio', link: FISH_URL, get: 'Get a free key (affiliate link)', note: 'Spoken replies are billed to your own Fish Audio account.', send: 'ob_fishkey' },
-    gemini: { name: 'Gemini', link: 'https://aistudio.google.com/apikey', get: 'Get a free key', note: 'Spoken replies are billed to your own Google AI Studio account.', send: 'ob_geminikey' },
+    fish: { name: 'Fish Audio', link: FISH_URL, get: 'Получить ключ (партнёрская ссылка)', note: 'Озвучка списывается с твоего аккаунта Fish Audio.', send: 'ob_fishkey' },
+    gemini: { name: 'Gemini', link: 'https://aistudio.google.com/apikey', get: 'Получить ключ', note: 'Озвучка списывается с твоего аккаунта Google AI Studio.', send: 'ob_geminikey' },
     voicestudio: { name: 'VoiceStudio', local: true },
   };
   // A row on this step coming or going: grows into its room and fades in, or the reverse, rather than popping.
@@ -526,8 +526,8 @@
     render() {
       const mode = replies.mode(), on = replies.on(), t = TTS[replies.tts()];
       const CARDS = [
-        ['text', 'Text only', 'Answers in my bubbles'],
-        ['voice', 'Voice + text', on ? 'Voice is on' : mode === 'voice' ? (t.local ? 'Needs VoiceStudio open' : `Needs a ${t.name} key`) : 'Said out loud too'],
+        ['text', 'Только текст', 'Ответы в облачках'],
+        ['voice', 'Голос + текст', on ? 'Голос включён' : mode === 'voice' ? (t.local ? 'Нужен запущенный VoiceStudio' : `Нужен ключ ${t.name}`) : 'И озвучка вслух'],
       ];
       $('replies').replaceChildren(...CARDS.map(([id, name, sub]) => {
         const checked = mode === id;
@@ -544,11 +544,11 @@
       // VoiceStudio: ready (and its engine), or exactly why not.
       const vs = t.local && state?.tts === replies.tts() ? state?.studio : null;
       showRow($('studio-row'), mode === 'voice' && !!t.local);
-      $('studio-status').textContent = !vs || vs.checking ? 'Checking VoiceStudio…' : vs.ok ? `VoiceStudio is ready${vs.engine ? ` · ${vs.engine}` : ''}` : vs.message || "VoiceStudio isn't available.";
+      $('studio-status').textContent = !vs || vs.checking ? 'Проверка VoiceStudio…' : vs.ok ? `VoiceStudio готов${vs.engine ? ` · ${vs.engine}` : ''}` : vs.message || 'VoiceStudio недоступен.';
       $('studio-status').className = vs && !vs.checking && !vs.ok ? 'bad' : '';
       // The voices, once it can speak: Gemini's ("Kore · Firm"), or the ones saved in VoiceStudio.
       showRow($('gvoice-row'), mode === 'voice' && t !== TTS.fish && saved);
-      const voices = t.local ? [{ id: 'default', label: 'Engine default' }, ...(vs?.voices ?? []).map((v) => ({ id: v.id, label: v.name }))]
+      const voices = t.local ? [{ id: 'default', label: 'По умолчанию' }, ...(vs?.voices ?? []).map((v) => ({ id: v.id, label: v.name }))]
         : (state?.geminiVoices ?? []).map((v) => ({ id: v.id, label: `${v.id} · ${v.style}` }));
       const list = JSON.stringify(voices);
       if ($('gvoice').dataset.list !== list) { $('gvoice').dataset.list = list; $('gvoice').replaceChildren(...voices.map((v) => el('option', { value: v.id, textContent: v.label }))); }
@@ -559,11 +559,11 @@
       showRow($('fish-form'), mode === 'voice' && !t.local && (!saved || replies.changing));
       showRow($('fish-change'), saved && mode === 'voice' && !t.local);
       // Gemini can already be speaking with the key added for the AI in the step before.
-      $('fish-change').textContent = replies.changing ? 'Keep my current key' : replies.tts() === 'gemini' && state?.geminiShared ? 'Using your Gemini AI key. Use a different one' : 'Change key';
-      $('fish-label').textContent = replies.changing ? `New ${t.name} API key` : `${t.name} API key`;
+      $('fish-change').textContent = replies.changing ? 'Оставить текущий ключ' : replies.tts() === 'gemini' && state?.geminiShared ? 'Используется ключ Gemini AI. Указать другой' : 'Сменить ключ';
+      $('fish-label').textContent = replies.changing ? `Новый API-ключ ${t.name}` : `API-ключ ${t.name}`;
       $('fish-change').setAttribute('aria-expanded', String(replies.changing));
       $('fish-save').disabled = replies.saving;
-      $('fish-save').textContent = replies.saving ? 'Checking…' : 'Save';
+      $('fish-save').textContent = replies.saving ? 'Проверка…' : 'Сохранить';
       // Talking hands-free (needs voice): open the mic for an answer, and wake on "Hey Roamies" where there's a wake word.
       $('talk-rows').hidden = !state?.voice;
       $('wake-row').hidden = !(state?.wakeOk ?? isMac());
@@ -575,30 +575,30 @@
       if (replies.mode() === id && (id === 'text' || state?.replies === 'voice')) return;
       replies.pick = id; $('fish-error').hidden = true;
       if (id === 'text' || replies.hasKey() || TTS[replies.tts()].local) {
-        if (state?.replies === id) quip(id === 'text' ? 'Text it is!' : 'Voice it is!');
+        if (state?.replies === id) quip(id === 'text' ? 'Только текст!' : 'Буду говорить!');
         send({ type: 'ob_replies', mode: id });
       }
       replies.render();
-      if (id === 'voice' && !replies.hasKey() && !TTS[replies.tts()].local) { $('fish-input').focus(); quip(`Got a ${TTS[replies.tts()].name} key?`, 3); }
+      if (id === 'voice' && !replies.hasKey() && !TTS[replies.tts()].local) { $('fish-input').focus(); quip(`Есть ключ ${TTS[replies.tts()].name}?`, 3); }
     },
     // One with a key saved (or VoiceStudio, which checks itself) speaks straight away; the others ask for a key first.
     provider(p) {
       replies.prov = p; replies.changing = false; $('fish-error').hidden = true; $('fish-input').value = '';
       if (replies.hasKey(p) || TTS[p].local) send({ type: 'ob_tts', provider: p });
       replies.render();
-      if (!replies.hasKey(p) && !TTS[p].local) { $('fish-input').focus(); quip(`Got a ${TTS[p].name} key?`, 3); }
+      if (!replies.hasKey(p) && !TTS[p].local) { $('fish-input').focus(); quip(`Есть ключ ${TTS[p].name}?`, 3); }
     },
     onFish(msg) {
       replies.saving = false;
       if (msg.ok) { act('hype'); $('fish-error').hidden = true; replies.changing = false; replies.prov = null; }
-      else showError('fish-error', msg.error || "That key didn't work.", msg.copy);
+      else showError('fish-error', msg.error || 'Этот ключ не подошёл.', msg.copy);
       replies.render();
     },
     enter() {
       replies.render();
       poseFn = POSE.point(1.7, 0.05);
       aim($('replies'));
-      setTimeout(() => at('voice') && quip('Should I talk out loud?', 3), 700);
+      setTimeout(() => at('voice') && quip('Отвечать тебе голосом?', 3), 700);
     },
     leave() { poseFn = null; },
   };
@@ -614,7 +614,7 @@
     replies.render();
     if (replies.changing) $('fish-input').focus();
   });
-  $('fish-link').addEventListener('click', () => { send({ type: 'open_link', url: TTS[replies.tts()].link }); quip('Copy it, then paste here'); });
+  $('fish-link').addEventListener('click', () => { send({ type: 'open_link', url: TTS[replies.tts()].link }); quip('Скопируй и вставь сюда'); });
   $('gvoice').addEventListener('change', () => {
     const v = $('gvoice').value;
     if (TTS[replies.tts()].local) { if (state.studio) state.studio.voice = v === 'default' ? null : v; send({ type: 'ob_studiovoice', voice: v }); }
@@ -653,7 +653,7 @@
       if (!at('keys')) return;
       const heard = $('heard');
       if (msg.type === 'state' && msg.state === 'listening') {
-        voice.listening = true; heard.textContent = 'Listening…'; poseFn = POSE.listen(); sfx('listen');
+        voice.listening = true; heard.textContent = 'Слушаю…'; poseFn = POSE.listen(); sfx('listen');
       } else if (msg.type === 'level') voice.target = clamp(msg.v, 0, 1);
       else if (msg.type === 'partial') heard.textContent = msg.text;
       else if (msg.type === 'state' && msg.state === 'processing') { voice.listening = false; }
@@ -661,15 +661,15 @@
         voice.listening = false; poseFn = null;
         // Drawing (Mac): circling something while holding the keys marks it; the words arrive with that area.
         const drew = canCircle() && !!msg.area;
-        heard.textContent = drew ? `“${msg.text}” + your circle` : `“${msg.text}”`;
-        act('hype'); quip(drew ? 'I saw your circle!' : keys.heard && canCircle() && !keys.drew ? 'Now try circling!' : 'I heard you!'); sfx('heard');
+        heard.textContent = drew ? `«${msg.text}» + обводка` : `«${msg.text}»`;
+        act('hype'); quip(drew ? 'Вижу твою обводку!' : keys.heard && canCircle() && !keys.drew ? 'А теперь обведи что-нибудь!' : 'Услышал тебя!'); sfx('heard');
         if (drew) keys.drew = true; else keys.heard = true;
         keys.tryLabel();
       } else if (msg.type === 'state' && msg.state === 'idle') { voice.listening = false; if (poseFn) poseFn = null; }
       else if (msg.type === 'error') {
         voice.listening = false; poseFn = null;
-        heard.textContent = msg.code === 'permission' ? 'I need the Microphone (step 2) to hear you.' : msg.code === 'nothing_heard' ? "Didn't catch that. Try again?" : 'Something went wrong. Try again?';
-        quip(msg.code === 'permission' ? 'I can’t hear you yet' : 'Again?');
+        heard.textContent = msg.code === 'permission' ? 'Нужен доступ к микрофону (шаг 2).' : msg.code === 'nothing_heard' ? 'Не расслышал. Попробуй ещё?' : 'Что-то пошло не так. Попробуй ещё?';
+        quip(msg.code === 'permission' ? 'Я тебя пока не слышу' : 'Ещё раз?');
       }
       // Wayland: the Talk button turns into Send while it listens.
       if (bind() && msg.type === 'state') keys.tryLabel();
@@ -683,15 +683,15 @@
       $('talk-row').hidden = !state.voice;
       const b = bind();
       $('bind-row').hidden = !b; $('hotkey-row').hidden = !!b; $('chords').hidden = !!b;
-      $('talk-hint').textContent = b ? 'Press your talk key, talk, then press it again (or pause) to send.' : 'Hold to talk. Tap to listen hands-free.';
-      $('keys-lead').textContent = b ? 'Pick keys for these, and they work from anywhere.' : 'These work from anywhere. Change them if you like.';
+      $('talk-hint').textContent = b ? 'Нажми клавишу разговора, скажи фразу, затем нажми снова (или сделай паузу).' : 'Зажми, чтобы говорить. Короткое нажатие — режим без рук.';
+      $('keys-lead').textContent = b ? 'Выбери клавиши — они будут работать везде.' : 'Работают из любого окна. Можешь поменять под себя.';
       if (b) keys.renderBind(b);
       $('chords').replaceChildren(...chords().map((c) => {
         const on = same(c, k.talk);
         const b = el('button', { className: 'px chord', type: 'button', role: 'radio', tabIndex: on ? 0 : -1 }, capsEl(capsFor(c)));
         b.setAttribute('aria-checked', String(on));
-        b.setAttribute('aria-label', `Hold ${c.map((x) => (isMac() ? x[0].toUpperCase() + x.slice(1) : PC_MOD[x])).join(' and ')}`);
-        b.onclick = () => { if (!on) { send({ type: 'set_keys', talk: c }); quip('Ooh, fancy.'); } };
+        b.setAttribute('aria-label', `Зажать ${c.map((x) => (isMac() ? x[0].toUpperCase() + x.slice(1) : PC_MOD[x])).join(' и ')}`);
+        b.onclick = () => { if (!on) { send({ type: 'set_keys', talk: c }); quip('О, красиво.'); } };
         return b;
       }));
       // Type to me: a quick tap of a pair. Picking the pair the other shortcut has swaps the two (the sidecar does it).
@@ -699,8 +699,8 @@
         const on = !!k.write && same(c, k.write);
         const b = el('button', { className: 'px chord', type: 'button', role: 'radio', tabIndex: on ? 0 : -1 }, capsEl(capsFor(c)));
         b.setAttribute('aria-checked', String(on));
-        b.setAttribute('aria-label', `Tap ${c.map((x) => (isMac() ? x[0].toUpperCase() + x.slice(1) : PC_MOD[x])).join(' and ')}`);
-        b.onclick = () => { if (!on) { send({ type: 'set_keys', write: c }); quip('Tap, tap.'); } };
+        b.setAttribute('aria-label', `Нажать ${c.map((x) => (isMac() ? x[0].toUpperCase() + x.slice(1) : PC_MOD[x])).join(' и ')}`);
+        b.onclick = () => { if (!on) { send({ type: 'set_keys', write: c }); quip('Клац-клац.'); } };
         return b;
       }));
       keys.tryLabel();
@@ -726,30 +726,30 @@
     tryLabel() {
       const k = state?.keys, vm = state?.voiceModel; if (!k) return;
       const tl = $('try-label');
-      if (!isMac() && vm && vm.status !== 'ready') tl.replaceChildren(vm.status === 'downloading' ? `Try it once my voice has downloaded (${pctOf(vm)}%).` : 'Download my voice in step 2 to try it.');
+      if (!isMac() && vm && vm.status !== 'ready') tl.replaceChildren(vm.status === 'downloading' ? `Попробуй, когда голос скачается (${pctOf(vm)}%).` : 'Скачай голос на шаге 2, чтобы попробовать.');
       // Once talking worked, the next try teaches drawing (circle something while holding the keys).
-      else if (canCircle() && keys.heard && !keys.drew) tl.replaceChildren('Now hold ', capsEl(capsFor(k.talk)), ' and circle something as you ask');
+      else if (canCircle() && keys.heard && !keys.drew) tl.replaceChildren('Теперь зажми ', capsEl(capsFor(k.talk)), ' и обведи что-нибудь во время вопроса');
       // Wayland: a button stands in for the talk shortcut, which may not be bound yet.
-      else if (bind()) tl.replaceChildren('Try it: ', el('button', { className: 'px btn ghost', type: 'button', textContent: voice.listening ? 'Send' : 'Talk', onclick: () => send({ type: 'cli', action: 'talk' }) }), voice.listening ? '' : ' and say hi');
-      else tl.replaceChildren('Try it: hold ', capsEl(capsFor(k.talk)), ' and say hi');
+      else if (bind()) tl.replaceChildren('Попробуй: ', el('button', { className: 'px btn ghost', type: 'button', textContent: voice.listening ? 'Отправить' : 'Говорить', onclick: () => send({ type: 'cli', action: 'talk' }) }), voice.listening ? '' : ' и скажи привет');
+      else tl.replaceChildren('Попробуй: зажми ', capsEl(capsFor(k.talk)), ' и скажи привет');
     },
     record(which) {
       if (keys.recording) keys.stop();
       keys.recording = which;
       $('keys-error').hidden = true;
-      $(`${which}-caps`).textContent = 'Press keys…';
+      $(`${which}-caps`).textContent = 'Нажми клавиши…';
       $(`${which}-caps`).parentElement.classList.add('recording');
-      $(`${which}-change`).textContent = 'Cancel';
-      poseFn = POSE.wait(); quip('Press your new combo');
+      $(`${which}-change`).textContent = 'Отмена';
+      poseFn = POSE.wait(); quip('Нажми новую комбинацию');
     },
     stop() {
       const w = keys.recording;
       keys.recording = null;
-      if (w) { $(`${w}-caps`).parentElement.classList.remove('recording'); $(`${w}-change`).textContent = 'Change'; }
+      if (w) { $(`${w}-caps`).parentElement.classList.remove('recording'); $(`${w}-change`).textContent = 'Изменить'; }
       poseFn = null;
       keys.render();
     },
-    enter() { keys.render(); aim($('chords')); setTimeout(() => at('keys') && quip(state?.voice ? 'Try talking to me!' : 'Your shortcuts'), 700); },
+    enter() { keys.render(); aim($('chords')); setTimeout(() => at('keys') && quip(state?.voice ? 'Попробуй поговорить со мной!' : 'Твои клавиши'), 700); },
     leave() { if (keys.recording) keys.stop(); poseFn = null; voice.listening = false; },
   };
   // Drawing, shown not told: a cursor holding the talk keys circles Roamie and the loop snaps shut, like the
@@ -822,12 +822,12 @@
     if (e.key === 'Escape') return keys.stop();
     if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
     const mods = [e.ctrlKey && 'Control', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Command'].filter(Boolean);
-    if (!mods.some((x) => x !== 'Shift')) { showError('keys-error', isMac() ? 'Hold Control, Option or Command too.' : 'Hold Ctrl or Alt too.'); return; }
+    if (!mods.some((x) => x !== 'Shift')) { showError('keys-error', isMac() ? 'Удерживай также Control, Option или Command.' : 'Удерживай также Ctrl или Alt.'); return; }
     if (!/^(Key[A-Z]|Digit\d|F\d{1,2}|Space|Backquote|Minus|Equal|BracketLeft|BracketRight|Backslash|Semicolon|Quote|Comma|Period|Slash)$/.test(e.code)) return;
     const which = keys.recording;
     keys.stop();
     send({ type: 'set_keys', [which]: [...mods, e.code].join('+') });
-    act('hype'); quip('Got it!');
+    act('hype'); quip('Готово!');
   }, true);
 
   // ---------------------------------------------------------------- step 5: find me
@@ -836,12 +836,12 @@
   // ticked off here as each draws. It comes back once the cards are gone: faded a few seconds after the last one,
   // closed with their ×, or cleared with Esc.
   const DEMO = [
-    ['Search the web', 'Answers, with where they came from.'],
-    ['Graphs', 'Numbers turned into charts.'],
-    ['Timelines', 'Events in order, at a glance.'],
-    ['Science', 'Molecules drawn from their formula.'],
-    ['3D models', 'Little models that turn.'],
-    ['Plans and lists', 'To-dos that keep you on track.'],
+    ['Поиск в сети', 'Ответы со ссылками на источники.'],
+    ['Графики', 'Цифры превращаются в диаграммы.'],
+    ['Таймлайны', 'События по порядку, наглядно.'],
+    ['Наука', 'Молекулы по их формулам.'],
+    ['3D-модели', 'Небольшие модели, которые можно крутить.'],
+    ['Планы и списки', 'Задачи, чтобы ничего не забыть.'],
   ];
   const demo = {
     status: 'idle', // idle → playing → done → idle again once the cards are gone | failed
@@ -849,14 +849,14 @@
     enter() {
       demo.render();
       send({ type: 'ob_showcase_warm' });
-      setTimeout(() => { if (at('demo') && demo.status !== 'playing') { poseFn = POSE.point(1.3, -0.9); quip('Want to see?'); } }, 700);
+      setTimeout(() => { if (at('demo') && demo.status !== 'playing') { poseFn = POSE.point(1.3, -0.9); quip('Хочешь посмотреть?'); } }, 700);
     },
     leave() { demo.stop(); poseFn = null; },
     async play() {
       demo.played = true; demo.status = 'playing'; demo.beat = -1;
       $('demo-say').textContent = '';
       poseFn = POSE.wait();
-      quip('Watch your desktop!', 1.2);
+      quip('Смотри на рабочий стол!', 1.2);
       demo.render();
       // Started at once: the first card is still being got ready while the bubble shows and this window steps aside.
       send({ type: 'ob_showcase' });
@@ -882,31 +882,31 @@
     on(msg) {
       if (msg.phase === 'beat' && demo.status === 'playing') {
         demo.beat = msg.beat | 0;
-        if (DEMO[demo.beat]) $('demo-say').textContent = `Drawing: ${DEMO[demo.beat][0]}`;
+        if (DEMO[demo.beat]) $('demo-say').textContent = `Рисую: ${DEMO[demo.beat][0]}`;
       } else if (msg.phase === 'done' && demo.status === 'playing') {
         demo.status = 'done'; demo.beat = DEMO.length;
-        $('demo-say').textContent = 'All drawn.';
+        $('demo-say').textContent = 'Всё нарисовано.';
       } else if (msg.phase === 'gone' && demo.aside) {
         // Stopped part way (Esc) still counts as seen: what drew stays ticked.
         if (demo.status === 'playing') demo.status = 'idle';
         demo.back(); poseFn = null;
-        if (at('demo')) { act('hype'); quip(demo.status === 'done' ? "That's a taste!" : 'Okay, stopped.'); }
+        if (at('demo')) { act('hype'); quip(demo.status === 'done' ? 'Вот так я умею!' : 'Ладно, остановил.'); }
       } else if (msg.phase === 'failed') {
         demo.status = 'failed'; demo.back(); poseFn = null;
-        if (at('demo')) { act('upset'); quip("Hmm, that didn't draw."); }
+        if (at('demo')) { act('upset'); quip('Хм, не получилось нарисовать.'); }
       } else return;
       demo.render();
     },
     render() {
       const playing = demo.status === 'playing', shown = demo.status === 'done' ? DEMO.length : Math.max(0, demo.beat);
-      $('demo-lead').textContent = demo.status === 'failed' ? "I couldn't draw just now." : 'Watch me draw on your desktop.';
+      $('demo-lead').textContent = demo.status === 'failed' ? 'Сейчас не удалось нарисовать.' : 'Смотри, как я рисую прямо на рабочем столе.';
       $('demo-rows').replaceChildren(...DEMO.map(([title, desc], i) => {
         const done = demo.played && i < shown && !(playing && i === demo.beat), now = playing && i === demo.beat;
-        const side = done ? okMark('Shown') : now ? el('span', { className: 'waiting' }, led('busy'), ' Drawing') : null;
+        const side = done ? okMark('Показано') : now ? el('span', { className: 'waiting' }, led('busy'), ' Рисую') : null;
         return el('li', { className: `px row${done ? ' granted' : now ? ' focus' : ''}` }, el('div', {}, el('h2', { textContent: title }), el('p', { textContent: desc, title: desc })), side);
       }));
       const btn = $('demo-again');
-      btn.textContent = playing ? 'Drawing…' : demo.status === 'failed' ? 'Try again' : demo.played ? 'Show me again' : 'Try me out';
+      btn.textContent = playing ? 'Рисую…' : demo.status === 'failed' ? 'Ещё раз' : demo.played ? 'Показать снова' : 'Попробовать';
       btn.disabled = playing;
       btn.className = `px btn ${demo.played && !playing ? 'ghost' : 'primary'}`;
     },
@@ -919,25 +919,25 @@
       const recap = $('recap');
       recap.replaceChildren();
       const b = bind();
-      if (state?.voice && k) recap.append(el('dt', {}, capsEl(b ? ['Your talk key'] : capsFor(k.talk))), el('dd', { textContent: b ? 'Press to talk to me, again to send' : canCircle() ? 'Hold to talk to me. Circle something to mark it' : 'Hold to talk to me' }));
-      if (k?.write && !b) recap.append(el('dt', {}, capsEl(capsFor(k.write))), el('dd', { textContent: 'Tap, then type to me' }));
-      if (k) recap.append(el('dt', {}, capsEl(b ? ['Your show key'] : accelCaps(k.summon))), el('dd', { textContent: 'Show or hide me' }));
-      if (k?.snap && canSnap()) recap.append(el('dt', {}, capsEl(accelCaps(k.snap))), el('dd', { textContent: 'Ask about an area of the screen' }));
+      if (state?.voice && k) recap.append(el('dt', {}, capsEl(b ? ['Клавиша разговора'] : capsFor(k.talk))), el('dd', { textContent: b ? 'Нажми, чтобы говорить, и ещё раз для отправки' : canCircle() ? 'Зажми, чтобы говорить. Обведи курсором, чтобы выделить' : 'Зажми, чтобы говорить' }));
+      if (k?.write && !b) recap.append(el('dt', {}, capsEl(capsFor(k.write))), el('dd', { textContent: 'Нажми и пиши мне' }));
+      if (k) recap.append(el('dt', {}, capsEl(b ? ['Клавиша показа'] : accelCaps(k.summon))), el('dd', { textContent: 'Показать или скрыть меня' }));
+      if (k?.snap && canSnap()) recap.append(el('dt', {}, capsEl(accelCaps(k.snap))), el('dd', { textContent: 'Спросить про область экрана' }));
       const tray = el('span', { className: 'caps' }); const cap = el('kbd', { className: 'px cap' }); cap.innerHTML = TRAY_SVG; tray.append(cap);
-      recap.append(el('dt', {}, tray), el('dd', { textContent: isMac() ? 'Everything else, in the menu bar' : 'Everything else, in the system tray' }));
+      recap.append(el('dt', {}, tray), el('dd', { textContent: isMac() ? 'Всё остальное — в строке меню' : 'Всё остальное — в системном трее' }));
       // Windows keeps tray icons at the bottom right, and new ones start hidden behind the ^ arrow.
       const mac = isMac();
       const linux = isLinux();
-      $('h-4').textContent = mac ? 'Find me up here' : linux ? 'Find me in the tray' : 'Find me down here';
-      $('find-where').textContent = mac ? 'I live in your menu bar. Click ' : linux ? 'I live in the system tray. Click ' : 'I live in the system tray, at the bottom right of your taskbar. Click ';
+      $('h-4').textContent = mac ? 'Ищи меня наверху' : linux ? 'Ищи меня в трее' : 'Ищи меня внизу';
+      $('find-where').textContent = mac ? 'Я живу в строке меню. Нажми на ' : linux ? 'Я живу в системном трее. Нажми на ' : 'Я живу в системном трее в правом нижнем углу. Нажми на ';
       // Linux: GNOME shows no tray without an extension, and opening Roamies again works anywhere.
-      $('find-tip').innerHTML = linux ? "No tray on your desktop? On GNOME, add the <b>AppIndicator</b> extension. Or just open Roamies again from your apps: that opens my panel." : "Don't see me? Click the <b>^</b> arrow next to the clock. To keep me in view, drag my icon onto the taskbar.";
+      $('find-tip').innerHTML = linux ? 'Нет трея? На GNOME поставь расширение <b>AppIndicator</b>. Или просто открой Roamies снова из меню приложений.' : 'Не видишь меня? Нажми стрелку <b>^</b> возле часов. Чтобы иконка всегда была видна, перетащи её на панель.';
       $('find-tip').hidden = mac;
       // Windows: straight to the Taskbar settings, where Roamies is switched on under Other system tray icons.
       $('find-show').hidden = mac || linux;
       $('find-bar').classList.toggle('taskbar', !mac);
       poseFn = POSE.point(1.25, mac ? -1.45 : 1.2);
-      setTimeout(() => at('find') && quip(mac ? 'I live up there!' : 'I live down there!'), 750);
+      setTimeout(() => at('find') && quip(mac ? 'Я живу вон там наверху!' : 'Я живу вон там внизу!'), 750);
     },
     leave() { poseFn = null; },
   };
@@ -1027,11 +1027,11 @@
     over: () => ['done', 'skipped', 'no_model', 'failed'].includes(chat.status),
     nav() {
       const over = chat.over();
-      $('next').textContent = over ? (cur === STEPS.length - 1 ? 'Done' : 'Continue') : 'Send';
+      $('next').textContent = over ? (cur === STEPS.length - 1 ? 'Готово' : 'Далее') : 'Отправить';
       $('next').disabled = !over && (chat.status !== 'asking' || !$('chat-input').value.trim());
       $('back').disabled = cur === 0 || !over;
       $('skip').hidden = over;
-      $('skip').textContent = 'Skip these questions';
+      $('skip').textContent = 'Пропустить вопросы';
     },
     next() { if (chat.over()) return false; chat.send(); return true; },
     skip() {
@@ -1068,12 +1068,12 @@
       } else if (msg.kind === 'chat_turn') {
         Object.assign(chat, { status: 'asking', n: msg.n, total: msg.total, lead: msg.lead, question: msg.question, hint: msg.hint });
         // The sidecar's split is the final word; it matches what's streamed, so this only finishes it off.
-        reveal.to('chat-lead', msg.lead || ''); reveal.to('chat-q', msg.question || 'Tell me more?'); reveal.to('chat-hint', msg.hint || '');
+        reveal.to('chat-lead', msg.lead || ''); reveal.to('chat-q', msg.question || 'Расскажи подробнее?'); reveal.to('chat-hint', msg.hint || '');
         $('chat-say').textContent = [msg.lead, msg.question].filter(Boolean).join(' ');
         if (at('chat')) setTimeout(() => $('chat-input').focus({ preventScroll: true }), 50);
       } else if (msg.kind === 'chat_done') {
         Object.assign(chat, { status: msg.skipped ? 'skipped' : 'done', done: msg.text ?? '', facts: msg.facts ?? [] });
-        if (!msg.skipped) { reveal.to('chat-lead', chat.done); reveal.to('chat-hint', ''); reveal.dim('chat-q'); reveal.to('chat-q', 'Nice to meet you'); $('chat-say').textContent = `Nice to meet you. ${chat.done}`; }
+        if (!msg.skipped) { reveal.to('chat-lead', chat.done); reveal.to('chat-hint', ''); reveal.dim('chat-q'); reveal.to('chat-q', 'Приятно познакомиться'); $('chat-say').textContent = `Приятно познакомиться. ${chat.done}`; }
         if (at('chat') && !msg.skipped) act('hype');
       } else if (msg.kind === 'chat_facts') chat.facts = msg.facts ?? [];
       chat.render();
@@ -1099,7 +1099,7 @@
     },
     render() {
       const st = chat.status, asking = st === 'asking', thinking = st === 'thinking';
-      $('chat-count').textContent = chat.over() ? '' : `Question ${Math.min(chat.total, chat.n + 1)} of ${chat.total}`;
+      $('chat-count').textContent = chat.over() ? '' : `Вопрос ${Math.min(chat.total, chat.n + 1)} из ${chat.total}`;
       // On its own (from the menu), the LED bar counts the questions instead of the setup steps.
       if (MODE === 'chat') {
         const done = chat.over() ? chat.total : chat.n;
@@ -1108,20 +1108,20 @@
       }
       // Fixed lines (not something it's saying) show at once; a turn's words reveal as they stream (above).
       const FIXED = {
-        skipped: ['Maybe later', 'No problem. Get to Know Me is in the Roamies panel any time.'],
-        no_model: ['I need a brain first', 'Connect an AI account in the Roamies panel, then try Get to Know Me again.'],
-        failed: ["That didn't work", "I couldn't reach the AI. Try Get to Know Me from the Roamies panel in a moment."],
+        skipped: ['Может позже', 'Без проблем. «Познакомиться ближе» всегда есть в панели Roamies.'],
+        no_model: ['Сначала нужен мозг', 'Подключи аккаунт ИИ в панели Roamies и попробуй ещё раз.'],
+        failed: ['Не получилось', 'Не удалось связаться с ИИ. Попробуй открыть «Познакомиться ближе» в панели чуть позже.'],
       };
       if (FIXED[st] && chat.fixed !== st) { chat.fixed = st; reveal.now('chat-q', FIXED[st][0]); reveal.now('chat-lead', FIXED[st][1]); reveal.now('chat-hint', ''); }
-      else if (thinking && !chat.n && !reveal.shown('chat-q')) reveal.now('chat-q', 'Getting to know you');
+      else if (thinking && !chat.n && !reveal.shown('chat-q')) reveal.now('chat-q', 'Знакомимся');
       $('chat-form').hidden = chat.over();
       $('chat-input').disabled = !asking;
       chat.slots();
       if (at('chat') && !$('chat-talk').classList.contains('on')) poseFn = thinking ? POSE.think() : asking ? POSE.wait() : null;
       $('chat-facts').hidden = st !== 'done' || !chat.facts.length;
       $('chat-facts-list').replaceChildren(...chat.facts.map((f) => {
-        const b = el('button', { className: 'link', type: 'button', textContent: 'Remove' });
-        b.setAttribute('aria-label', `Forget: ${f.text}`);
+        const b = el('button', { className: 'link', type: 'button', textContent: 'Удалить' });
+        b.setAttribute('aria-label', `Забыть: ${f.text}`);
         b.onclick = () => { send({ type: 'chat_forget', id: f.id }); chat.facts = chat.facts.filter((x) => x.id !== f.id); chat.render(); };
         return el('li', { className: 'px row fact-row' }, el('span', { className: 'fact', textContent: f.text, title: f.text }), b);
       }));
@@ -1137,21 +1137,21 @@
       const input = $('chat-input'), talk = $('chat-talk');
       if (chat.status !== 'asking') return;
       if (msg.type === 'state' && msg.state === 'listening') {
-        chat.heard = false; chat.before = input.value; input.value = ''; input.placeholder = 'Listening…';
+        chat.heard = false; chat.before = input.value; input.value = ''; input.placeholder = 'Слушаю…';
         talk.classList.add('on'); poseFn = POSE.listen(); sfx('listen'); Roamie.voiceOut?.stop();
       } else if (msg.type === 'level') voice.target = clamp(msg.v, 0, 1);
       else if (msg.type === 'partial') input.value = msg.text;
       else if (msg.type === 'final') {
-        chat.heard = true; talk.classList.remove('on'); input.placeholder = 'Type your answer…';
+        chat.heard = true; talk.classList.remove('on'); input.placeholder = 'Напиши ответ…';
         sfx('heard'); chat.send(String(msg.text ?? '').trim());
       } else if (msg.type === 'state' && msg.state === 'idle') {
-        talk.classList.remove('on'); input.placeholder = 'Type your answer…';
+        talk.classList.remove('on'); input.placeholder = 'Напиши ответ…';
         if (!chat.heard && !input.value) input.value = chat.before;
         if (chat.status === 'asking') poseFn = POSE.wait();
       } else if (msg.type === 'error') {
-        talk.classList.remove('on'); input.placeholder = 'Type your answer…'; input.value = chat.before;
+        talk.classList.remove('on'); input.placeholder = 'Напиши ответ…'; input.value = chat.before;
         poseFn = POSE.wait();
-        quip(msg.code === 'permission' ? 'I can’t hear you yet' : 'Didn’t catch that');
+        quip(msg.code === 'permission' ? 'Я тебя пока не слышу' : 'Не расслышал');
       }
       nav();
     },
@@ -1162,8 +1162,8 @@
   // ---------------------------------------------------------------- flow
   // ---------------------------------------------------------------- step 0: look and size
   // Picked here, previewed on the guide right away, saved by the app (Settings has the same choices).
-  const LOOKS = [['classic', 'Roamie'], ['jarvis', 'JARVIS'], ['glayos', 'GlayOS'], ['ultren', 'Ultren'], ['anime', 'Anime Girl'], ['sarah', 'Sarah'], ['adrian', 'Adrian'], ['rita', 'Rita X']], SIZES = [['default', 'Default'], ['small', 'Small'], ['cursor', 'Cursor']];
-  const LOOK_QUIPS = { classic: 'Classic me!', jarvis: 'At your service.', glayos: 'Oh, good. A new test subject.', ultren: 'No strings. Shall we begin?', anime: 'Yay, hi hi!', sarah: 'Hey, nice to meet you!', adrian: 'Alright, let\'s do this.', rita: 'Shall we get to work?' }, SIZE_QUIPS = { default: 'Full size!', small: 'Fun size!', cursor: 'Tiny pointer me!' };
+  const LOOKS = [['classic', 'Roamie'], ['jarvis', 'JARVIS'], ['glayos', 'GlayOS'], ['ultren', 'Ultren'], ['anime', 'Anime Girl'], ['sarah', 'Sarah'], ['adrian', 'Adrian'], ['rita', 'Rita X']], SIZES = [['default', 'Обычный'], ['small', 'Маленький'], ['cursor', 'Курсор']];
+  const LOOK_QUIPS = { classic: 'Классика!', jarvis: 'К вашим услугам.', glayos: 'О, отлично. Новый испытуемый.', ultren: 'Без ниточек. Начнём?', anime: 'Ура, привет-привет!', sarah: 'Привет, рада познакомиться!', adrian: 'Ну что, погнали?', rita: 'Приступим к работе?' }, SIZE_QUIPS = { default: 'Полный размер!', small: 'Компактный!', cursor: 'Мини-указатель!' };
   const look = {
     radios(id, list, value, pickIt) {
       $(id).replaceChildren(...list.map(([v, label]) => {
@@ -1175,24 +1175,24 @@
       }));
     },
     render() {
-      $('h-0').textContent = `Hi, I'm ${(LOOKS.find(([v]) => v === (state?.look ?? 'classic')) ?? LOOKS[0])[1]}.`;
+      $('h-0').textContent = `Привет, я ${(LOOKS.find(([v]) => v === (state?.look ?? 'classic')) ?? LOOKS[0])[1]}.`;
       look.radios('looks', LOOKS, state?.look ?? 'classic', (v) => { state.look = v; sidekick.setLook?.(v); send({ type: 'ob_look', look: v }); quip(LOOK_QUIPS[v]); look.render(); });
       look.radios('sizes', SIZES, state?.size ?? 'default', (v) => { state.size = v; sidekick.setForm?.(v); send({ type: 'ob_size', size: v }); quip(SIZE_QUIPS[v]); look.render(); });
     },
   };
 
   const ALL = [
-    { name: 'welcome', enter: 'drop', next: "Let's go", onEnter: () => { look.render(); setTimeout(() => { if (at('welcome')) { act('wave'); quip('Hi there!'); } }, 650); } },
+    { name: 'welcome', enter: 'drop', next: 'Поехали', onEnter: () => { look.render(); setTimeout(() => { if (at('welcome')) { act('wave'); quip('Привет!'); } }, 650); } },
     // Windows: the voice download is optional, so it can be skipped.
-    { name: 'perms', enter: 'materialize', next: 'Continue', onEnter: perms.enter, onLeave: perms.leave, ready: () => perms.done(), get skip() { return !isMac(); } },
+    { name: 'perms', enter: 'materialize', next: 'Далее', onEnter: perms.enter, onLeave: perms.leave, ready: () => perms.done(), get skip() { return !isMac(); } },
     // Why the model matters (Roamies isn't a chatbot): read before picking one.
-    { name: 'brain', enter: 'drop', next: 'Got it', onEnter: () => setTimeout(() => { if (at('brain')) quip('I need a good brain!'); }, 650) },
-    { name: 'ai', enter: 'crt', next: 'Continue', onEnter: ai.enter, onLeave: ai.leave, ready: () => !!state?.connected, skip: true },
-    { name: 'voice', enter: 'materialize', next: 'Continue', onEnter: replies.enter, onLeave: replies.leave, ready: () => replies.ready(), skip: true },
-    { name: 'demo', enter: 'crt', next: 'Continue', onEnter: demo.enter, onLeave: demo.leave },
-    { name: 'keys', enter: 'materialize', next: 'Continue', onEnter: keys.enter, onLeave: keys.leave },
-    { name: 'chat', enter: 'crt', next: 'Send', onEnter: () => chat.enter(), onLeave: () => chat.leave(), nav: () => chat.nav(), onNext: () => chat.next(), onSkip: () => chat.skip() },
-    { name: 'find', enter: 'drop', next: 'Done', onEnter: find.enter, onLeave: find.leave },
+    { name: 'brain', enter: 'drop', next: 'Понятно', onEnter: () => setTimeout(() => { if (at('brain')) quip('Мне нужен хороший мозг!'); }, 650) },
+    { name: 'ai', enter: 'crt', next: 'Далее', onEnter: ai.enter, onLeave: ai.leave, ready: () => !!state?.connected, skip: true },
+    { name: 'voice', enter: 'materialize', next: 'Далее', onEnter: replies.enter, onLeave: replies.leave, ready: () => replies.ready(), skip: true },
+    { name: 'demo', enter: 'crt', next: 'Далее', onEnter: demo.enter, onLeave: demo.leave },
+    { name: 'keys', enter: 'materialize', next: 'Далее', onEnter: keys.enter, onLeave: keys.leave },
+    { name: 'chat', enter: 'crt', next: 'Отправить', onEnter: () => chat.enter(), onLeave: () => chat.leave(), nav: () => chat.nav(), onNext: () => chat.next(), onSkip: () => chat.skip() },
+    { name: 'find', enter: 'drop', next: 'Готово', onEnter: find.enter, onLeave: find.leave },
   ];
   // ?mode=chat: only the get-to-know-you chat (from the menu's Get to Know Me…).
   const STEPS = MODE === 'chat' ? ALL.filter((s) => s.name === 'chat') : ALL;
@@ -1211,7 +1211,7 @@
     $('back').disabled = cur === 0;
     $('back').hidden = STEPS.length === 1;
     $('skip').hidden = !(s.skip && !ready) && !(escape && !ready);
-    $('skip').textContent = s.skip ? 'Skip for now' : 'Continue anyway';
+    $('skip').textContent = s.skip ? 'Пропустить' : 'Продолжить всё равно';
     s.nav?.();
   }
   function go(i) {
@@ -1224,7 +1224,7 @@
       if (j === i) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
     });
     // Screen readers only: sighted users read the LED bar.
-    $('step-name').textContent = `Step ${i + 1} of ${STEPS.length}: ${sections[i].dataset.name}`;
+    $('step-name').textContent = `Шаг ${i + 1} из ${STEPS.length}: ${sections[i].dataset.name}`;
     cur = i;
     send({ type: 'ob_step', step: i });
     enter(STEPS[i].enter);
@@ -1242,9 +1242,9 @@
     send({ type: 'ob_done' });
     const canTalk = state?.voice && state.keys && (isMac() || state.voiceModel?.status === 'ready');
     const talk = canTalk ? capsFor(state.keys.talk).join(isMac() ? '' : '+') : null;
-    const where = isMac() ? 'click my icon up here' : isLinux() ? "open my tray icon's menu" : 'click my icon down here';
-    const how = bind() ? 'Press your talk shortcut to talk' : `Hold ${talk} to talk`;
-    invoke('onboarding_finish', { text: talk ? `Here I am! ${how}, or ${where} anytime.` : `Here I am! ${where[0].toUpperCase()}${where.slice(1)} anytime.` });
+    const where = isMac() ? 'нажми на мою иконку наверху' : isLinux() ? 'открой меню в трее' : 'нажми на мою иконку внизу';
+    const how = bind() ? 'Нажми клавишу разговора, чтобы говорить' : `Зажми ${talk}, чтобы говорить`;
+    invoke('onboarding_finish', { text: talk ? `Я здесь! ${how} или ${where} в любой момент.` : `Я здесь! ${where[0].toUpperCase()}${where.slice(1)} в любой момент.` });
   }
   const forward = () => (cur === STEPS.length - 1 ? finish() : go(cur + 1));
   $('next').addEventListener('click', () => { if (!STEPS[cur]?.onNext?.()) forward(); });
