@@ -164,6 +164,8 @@ const LOOKS = [
   ['sarah', 'Sarah', '933563129e564b19a115bedd57b7406a'],
   ['adrian', 'Adrian', 'bf322df2096a46f18c579d0baa36f41d'],
   ['rita', 'Rita X', '84aadb575ed74e9aa44ba7ab8619d1a1'],
+  ['cat', 'Miso', DEFAULT_VOICE],
+  ['prism', 'Prism', DEFAULT_VOICE],
 ];
 const lookVoice = () => (LOOKS.find(([id]) => id === config.look) ?? LOOKS[0])[2];
 // The look's voice with Gemini and with VoiceStudio: the user's pick for it, else its own default.
@@ -173,8 +175,8 @@ const studioVoice = () => config.studioVoices?.[config.look] ?? null;
 const nameOfLook = (look) => (LOOKS.find(([id]) => id === look) ?? LOOKS[0])[1];
 const lookName = () => nameOfLook(config.look);
 // What each says when it's picked, in its own voice (Settings and the setup guide show the same words).
-const LOOK_GREETINGS = { classic: 'Classic me!', jarvis: 'At your service.', glayos: 'Oh, good. A new test subject.', ultren: 'No strings. Shall we begin?', anime: 'Yay, hi hi!', sarah: 'Hey, nice to meet you!', adrian: "Alright, let's do this.", rita: 'Shall we get to work?' };
-const LOOK_BODY = { classic: 'a tiny glowing pixel creature', jarvis: 'a glowing sphere of light', glayos: 'a pixel robot head with one glowing eye', ultren: 'a pixel chrome robot with glowing eyes', anime: 'a pixel anime girl', sarah: 'a pixel woman', adrian: 'a pixel man', rita: 'a pixel secretary in cat-eye glasses' };
+const LOOK_GREETINGS = { classic: 'Classic me!', jarvis: 'At your service.', glayos: 'Oh, good. A new test subject.', ultren: 'No strings. Shall we begin?', anime: 'Yay, hi hi!', sarah: 'Hey, nice to meet you!', adrian: "Alright, let's do this.", rita: 'Shall we get to work?', cat: 'Meow! Ready when you are.', prism: 'Refracting light and ready.' };
+const LOOK_BODY = { classic: 'a tiny glowing pixel creature', jarvis: 'a glowing sphere of light', glayos: 'a pixel robot head with one glowing eye', ultren: 'a pixel chrome robot with glowing eyes', anime: 'a pixel anime girl', sarah: 'a pixel woman', adrian: 'a pixel man', rita: 'a pixel secretary in cat-eye glasses', cat: 'a pixel cat with paws and a wagging tail', prism: 'a spinning rainbow crystal of LED facets' };
 // How each one talks, kept short: the neutral ones in a few words, the characters as they really talk. The menace and the
 // barbs are style only; the help is the same.
 const LOOK_STYLE = {
@@ -186,6 +188,8 @@ const LOOK_STYLE = {
   sarah: 'friendly, easygoing and kind, like a good friend.',
   adrian: 'relaxed and straight-talking, a steady mate who keeps it simple.',
   rita: 'a sharp, organised secretary: crisp, efficient and a touch sassy.',
+  cat: 'playful, curious and cosy like a clever cat, helpful and quick without overdoing the cat puns.',
+  prism: 'bright, crisp and energetic, with a calm geometric clarity.',
 };
 const VOICE_OK = hasVoice(process.platform);
 // Windows and Linux have no on-device speech API apps can use, so voice there runs Parakeet on the PC. Its model
@@ -1968,9 +1972,8 @@ function setLogin(on) { login.asked = true; send({ type: 'login_item', on }); }
 // page: this copy can't replace itself (Linux, installed from a .deb or .rpm), so "install" opens the download page.
 const update = { available: null, told: null, manual: false, installing: false, checking: false, result: null, page: false, done: null };
 function checkUpdates(manual = false) {
-  update.manual = manual;
-  if (manual) { update.checking = true; update.result = null; panel(); }
-  send({ type: 'update', install: false });
+  // Auto-updates from upstream are disabled in Qbdy.
+  return;
 }
 function installUpdate() {
   if (update.installing) return;

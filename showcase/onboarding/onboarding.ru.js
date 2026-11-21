@@ -1162,8 +1162,8 @@
   // ---------------------------------------------------------------- flow
   // ---------------------------------------------------------------- step 0: look and size
   // Picked here, previewed on the guide right away, saved by the app (Settings has the same choices).
-  const LOOKS = [['classic', 'Roamie'], ['jarvis', 'JARVIS'], ['glayos', 'GlayOS'], ['ultren', 'Ultren'], ['anime', 'Anime Girl'], ['sarah', 'Sarah'], ['adrian', 'Adrian'], ['rita', 'Rita X']], SIZES = [['default', 'Обычный'], ['small', 'Маленький'], ['cursor', 'Курсор']];
-  const LOOK_QUIPS = { classic: 'Классика!', jarvis: 'К вашим услугам.', glayos: 'О, отлично. Новый испытуемый.', ultren: 'Без ниточек. Начнём?', anime: 'Ура, привет-привет!', sarah: 'Привет, рада познакомиться!', adrian: 'Ну что, погнали?', rita: 'Приступим к работе?' }, SIZE_QUIPS = { default: 'Полный размер!', small: 'Компактный!', cursor: 'Мини-указатель!' };
+  const LOOKS = [['classic', 'Roamie'], ['jarvis', 'JARVIS'], ['glayos', 'GlayOS'], ['ultren', 'Ultren'], ['anime', 'Anime Girl'], ['sarah', 'Sarah'], ['adrian', 'Adrian'], ['rita', 'Rita X'], ['cat', 'Miso (Котик)'], ['prism', 'Prism (Кристалл)']], SIZES = [['default', 'Обычный'], ['small', 'Маленький'], ['cursor', 'Курсор']];
+  const LOOK_QUIPS = { classic: 'Классика!', jarvis: 'К вашим услугам.', glayos: 'О, отлично. Новый испытуемый.', ultren: 'Без ниточек. Начнём?', anime: 'Ура, привет-привет!', sarah: 'Привет, рада познакомиться!', adrian: 'Ну что, погнали?', rita: 'Приступим к работе?', cat: 'Мяу! Готов к работе.', prism: 'Переливаюсь и готов!' }, SIZE_QUIPS = { default: 'Полный размер!', small: 'Компактный!', cursor: 'Мини-указатель!' };
   const look = {
     radios(id, list, value, pickIt) {
       $(id).replaceChildren(...list.map(([v, label]) => {

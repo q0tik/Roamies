@@ -226,22 +226,8 @@
   const FRESH = 6000;
   let freshTimer = 0;
   function updateButton() {
-    const u = state.update, b = $('head-update'), v = u.available;
-    const fresh = u.result?.ok && Date.now() - (u.result.at ?? 0) < FRESH;
-    const [label, aria, kind, off] =
-      u.done ? ['Done', `Roamies ${u.done} is installed. Restarting`, 'ghost', true]
-      : u.installing ? ['Updating…', `Installing Roamies ${v}`, 'ghost', true]
-      : v ? (u.page ? [`Get ${v}`, `Open the download page for Roamies ${v}`, 'primary', false] : [`Update to ${v}`, `Install Roamies ${v} and restart`, 'primary', false])
-      : u.checking ? ['Checking…', 'Checking for updates', 'ghost', true]
-      : fresh ? ['Up to date', `Roamies ${state.version} is up to date`, 'ghost', true]
-      : u.result ? ['Check again', "Couldn't check for updates. Check again", 'ghost', false]
-      : ['Check for updates', 'Check for updates', 'ghost', false];
-    b.hidden = false; b.textContent = label; b.disabled = off;
-    b.className = `px btn mini ${kind}`;
-    b.setAttribute('aria-label', aria);
-    b.title = u.result && !u.result.ok && !v && !u.checking ? u.result.error ?? "Couldn't check for updates." : '';
-    clearTimeout(freshTimer);
-    if (fresh) freshTimer = setTimeout(() => state && updateButton(), FRESH - (Date.now() - u.result.at) + 50);
+    const b = $('head-update');
+    if (b) b.hidden = true;
   }
   $('head-update').addEventListener('click', () => act(state?.update?.available ? 'install_update' : 'update'));
   // Quit asks first: the first press turns it into Confirm for 4 s, the second quits.
@@ -335,7 +321,7 @@
   // The header's Roamie: your look, reacting to what's going on. A short line beside it when something changes.
   // The same size and detail as the look tiles (fewer dots than that and the faces turn to noise).
   const avatar = liveRoamie($('avatar'), 100, 74, { y: 0.55 });
-  const QUIPS = { classic: 'Classic me!', jarvis: 'At your service.', glayos: 'Oh, good. A new test subject.', ultren: 'No strings. Shall we begin?', anime: 'Yay, hi hi!', sarah: 'Hey, nice to meet you!', adrian: "Alright, let's do this.", rita: 'Shall we get to work?' };
+  const QUIPS = { classic: 'Classic me!', jarvis: 'At your service.', glayos: 'Oh, good. A new test subject.', ultren: 'No strings. Shall we begin?', anime: 'Yay, hi hi!', sarah: 'Hey, nice to meet you!', adrian: "Alright, let's do this.", rita: 'Shall we get to work?', cat: 'Meow! Ready when you are.', prism: 'Refracting light and ready.' };
   let quipTimer = 0, seen = { look: null, update: null, opened: 0 };
   function quip(text, secs = 2.6) {
     const q = $('saying'), n = $('by');
@@ -1028,37 +1014,35 @@
     ];
   }
   // Who made Roamies: Ken, live (he's drawn like the looks but isn't one), and where to find him.
-  const KEN = [
-    ['Skool', 'Learn with Ken, or support him', 'https://www.skool.com/kenkai', "Open Ken Kai's Skool community"],
-    ['YouTube', '@kenkaidoesai', 'https://www.youtube.com/@kenkaidoesai', "Open Ken Kai's YouTube channel"],
-    ['TikTok', '@ggkenkai', 'https://www.tiktok.com/@ggkenkai', "Open Ken Kai's TikTok"],
-    ['Source code', 'Open source under AGPL-3.0', 'https://github.com/KenKaiii/Roamies', 'Open the Roamies source code on GitHub'],
+  const Q0TIK_LINKS = [
+    ['GitHub (q0tik)', 'Qbdy fork maintainer', 'https://github.com/q0tik', "Open q0tik's GitHub profile"],
+    ['Qbdy repository', 'Fork with EN/RU UI, MCP JSON, .md skills and custom looks', 'https://github.com/q0tik/Roamies', 'Open the Qbdy repository on GitHub'],
+    ['Original Roamies', 'Created by Ken Kai (AGPL-3.0)', 'https://github.com/KenKaiii/Roamies', 'Open the original Roamies repository on GitHub'],
   ];
-  let ken = null;
+  let q0tikCard = null;
   function maker() {
-    if (!ken) {
+    if (!q0tikCard) {
       const cv = el('canvas', { 'aria-hidden': 'true' });
-      const r = liveRoamie(cv, 100, 74, { look: 'ken', y: 0.55 });
-      const card = el('div', { className: 'maker' }, cv, el('span', {}, 'Ken Kai', el('small', { textContent: 'Creator of Roamies' })));
+      const r = liveRoamie(cv, 100, 74, { look: 'q0tik', y: 0.55 });
+      const card = el('div', { className: 'maker' }, cv, el('span', {}, 'q0tik', el('small', { textContent: 'Qbdy fork maintainer (based on Roamies)' })));
       let waved = 0;
       card.addEventListener('pointerenter', () => { if (r && Date.now() - waved > 3500) { waved = Date.now(); r.act('wave'); } });
       r?.appear('crt');
-      ken = card;
+      q0tikCard = card;
     }
-    return ken;
+    return q0tikCard;
   }
   function aboutPage() {
     return [
-      group('Made by', null, null, maker(),
-        KEN.map(([label, hint, url, aria]) => el('div', { className: 'setting' },
+      group('About Qbdy', 'Personal fork based on Roamies by Ken Kai.', null, maker(),
+        Q0TIK_LINKS.map(([label, hint, url, aria]) => el('div', { className: 'setting' },
           el('span', {}, label, el('small', { textContent: hint })),
-          link('Open', () => send({ type: 'open_link', url }), { k: `ken-${label.toLowerCase()}`, aria })))),
+          link('Open', () => send({ type: 'open_link', url }), { k: `q0tik-${label.toLowerCase()}`, aria })))),
       group('Help', null, null,
         el('div', { className: 'links' },
           link('Setup guide', () => act('setup', true), { k: 'setup' }),
           link('Show logs', () => act('logs'), { k: 'logs' }),
           link('Save diagnostics', () => act('diagnostics'), { k: 'diagnostics', aria: 'Save a diagnostics file to send when something goes wrong' }),
-          // Only once there is one: the latest error anyone saw, in full, for pasting into a report.
           state.problem ? link('Copy last error', copyProblem, { k: 'copy-problem' }) : null)),
     ];
   }
@@ -1100,7 +1084,7 @@
   }
 
   // ---------------------------------------------------------------- render
-  const PANES = { home, memory, abilities: abilitiesPage, model: modelPage, appearance: appearancePage, speaking: speakingPage, listening: listeningPage, shortcuts: shortcutsPage, general: generalPage, whatsnew: whatsNewPage };
+  const PANES = { home, memory, abilities: abilitiesPage, model: modelPage, appearance: appearancePage, speaking: speakingPage, listening: listeningPage, shortcuts: shortcutsPage, general: generalPage, about: aboutPage, whatsnew: whatsNewPage };
   // focusKey: what to focus after (a data-k, or an element id); otherwise whatever had focus keeps it.
   function render(focusKey, animate = false) {
     if (!state) return;
