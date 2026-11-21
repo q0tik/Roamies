@@ -492,13 +492,13 @@
           rest: pose?.rest ?? null, feel: pose?.feel ?? null, // the voice's feeling: the mouth between words, and JARVIS's heart
         });
         // The globe's points overlap (the brightest wins); a character is drawn in layers (the last one wins).
-        if (look === 'jarvis' || look === 'prism') {
-          const k = { put, L, th, setPx };
+        if (look !== 'jarvis' && look !== 'prism') {
+          const k = { put, L, th };
           if (form === 'cursor') J.cursor(k, Math.round(bx / P), Math.round(by / P), Math.round(bx / P) - AX, Math.round(by / P) - AY, jst);
           else J.body(k, bx / P, by / P, R / P, jst);
           return;
         }
-        const k = { put: jput, L, th };
+        const k = { put: jput, L, th, setPx };
         if (form === 'cursor') J.cursor(k, Math.round(bx / P), Math.round(by / P), Math.round(bx / P) - AX, Math.round(by / P) - AY, jst);
         else {
           // A faint projector glow on the floor under the hologram.
